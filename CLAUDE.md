@@ -129,4 +129,14 @@ Development and runtime:
 - `pnpm dev` — start the Next.js dev server (restart after editing `.env.local`)
 - `pnpm start` — run the production build locally after `pnpm build`
 
-After implementation, run `typecheck` and `lint` at minimum and once everything is okay, commit to git with a concise commit message. Add `build` when routes, config, or server modules changed. Report the exact command output; do not claim a check passed without running it.
+After implementation, run `typecheck` and `lint` at minimum. Add `build` when routes, config, or server modules changed. Report the exact command output; do not claim a check passed without running it.
+
+# Git commits
+
+Every change to the codebase that passes all required checks must be committed to git.
+
+- This applies to every change — features, fixes, config, dependencies, and docs (including this file).
+- Commit only after every required check passes. If any check fails, fix it first; never commit failing code.
+- Use a concise commit message that describes what changed and why.
+- Stage only files related to the change. Never commit `.env.local`, secrets, `node_modules/`, or `.next/`.
+- Commit locally only; push to `origin` only when the user asks.
