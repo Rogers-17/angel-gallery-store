@@ -1,20 +1,27 @@
 import type { Metadata } from "next";
-import { GeistSans } from "geist/font/sans";
-import { GeistMono } from "geist/font/mono";
+import { AnnouncementBar } from "@/components/layout/announcement-bar";
+import { SiteFooter } from "@/components/layout/site-footer";
+import { SiteHeader } from "@/components/layout/site-header";
+import { mono, sans, serif } from "./fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Angel Gallery Store",
-  description: "Angel Gallery Store",
+  description: "Considered objects and clothing, curated by Angel Gallery.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${GeistSans.variable} ${GeistMono.variable} h-full antialiased`}
+      className={`${sans.variable} ${mono.variable} ${serif.variable} h-full`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        <AnnouncementBar>Complimentary shipping on orders over $150</AnnouncementBar>
+        <SiteHeader />
+        {children}
+        <SiteFooter />
+      </body>
     </html>
   );
 }

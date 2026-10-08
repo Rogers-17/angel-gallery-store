@@ -50,11 +50,23 @@ Use:
 - Tailwind CSS v4 (CSS-first config in `src/app/globals.css`; wired through the `@tailwindcss/turbopack` loader in `next.config.ts`)
 - Drizzle ORM + drizzle-kit
 - PostgreSQL via Neon (`@neondatabase/serverless`, HTTP driver)
-- Geist fonts from the `geist` package (local files — do not switch back to `next/font/google`; Google Fonts is unreliable on this network)
+- Fonts self-hosted via `next/font/local`: Geist from the `geist` package, Newsreader from `@fontsource-variable/newsreader` (do not use `next/font/google`; Google Fonts is unreliable on this network)
 
 `next.config.ts` enables `cacheComponents` and `partialPrefetching`. Route handlers and pages that query the database must run at request time (`await connection()` from `next/server`) or cache explicitly with `use cache`.
 
 Not built yet — do not add unless explicitly requested: e-commerce features, auth flows, payments, deployment config.
+
+# Design system
+
+Premium, editorial, near-monochrome. Full rationale in `prompts/design-system.md`; live preview at `/design-system`.
+
+- Tokens live in `src/styles/theme.css` (Tailwind `@theme`): colors (`paper`, `surface`, `ink`, `muted`, `line`, `accent`, …), fonts (`font-serif` Newsreader for headings, `font-sans` Geist for UI/body), type scale (`text-display`, `text-h1`–`text-h4`, `text-body-lg`, `text-body`, `text-small`, `text-label`), spacing (`gutter`, `section`, `section-sm`, `header`), containers (`page` 1440px, `narrow` 720px).
+- Primitives live in `src/styles/components.css` (`@utility`) and `src/components/ui/`: `Container`, `Section`, `Heading`/`Eyebrow`, `Button`/`ButtonLink`, `TextLink`, `Media`, `ProductGrid`. Use them instead of re-styling elements.
+- Base styles (body, headings, focus ring, reduced motion) live in `src/styles/base.css`. `src/app/globals.css` only imports these files.
+- Rules: no hard-coded hex values or arbitrary font sizes in components — use tokens. Square corners (no radius) and no shadows; use hairline borders (`hairline border-*`) and whitespace for hierarchy. Uppercase tracked labels via `eyebrow`. Product images are 4:5. Product grids are 2 / 3 / 4 columns (mobile / md / lg). Keep visible focus rings.
+- Fonts are self-hosted (`src/app/fonts.ts`). Never use `next/font/google`.
+- The site shell (announcement bar, header, footer) is in the root layout; the mobile menu is the only client component.
+- `src/app/_demo/catalog.ts` is temporary demo data for the homepage; replace with Drizzle queries when products exist.
 
 # Neon Postgres source of truth
 
@@ -70,6 +82,12 @@ Neon Postgres is the source of truth for app data. All database access goes thro
 ```
 src/app/               Routes (App Router)
 src/app/api/health/    GET — database connectivity check
+src/app/design-system/ Design token and component preview page
+src/app/fonts.ts       Font definitions (all self-hosted)
+src/styles/            theme.css (tokens), base.css, components.css (primitives)
+src/components/ui/     Reusable design primitives
+src/components/layout/ Announcement bar, header, mobile menu, footer
+src/components/product/ Product UI (ProductCard)
 src/db/index.ts        Drizzle client (server-only, lazy)
 src/db/schema.ts       Drizzle table definitions
 src/lib/env.ts         Server-only env access (throws on missing vars)

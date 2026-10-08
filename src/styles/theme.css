@@ -1,0 +1,82 @@
+/*
+ * Design tokens. Every color, font, size and width used by the UI comes from here.
+ * Tailwind turns each token into utilities, e.g. --color-ink -> text-ink / bg-ink,
+ * --text-h2 -> text-h2, --spacing-gutter -> px-gutter, --container-page -> max-w-page.
+ */
+@theme {
+  /* Color: warm, near-monochrome. Imagery carries color; accent is used sparingly. */
+  --color-paper: #f7f5f1;
+  --color-surface: #efebe4;
+  --color-surface-strong: #e4ded4;
+  --color-ink: #1a1917;
+  --color-ink-soft: #3a3834;
+  --color-muted: #6e6a63;
+  --color-line: #e2ddd4;
+  --color-line-strong: #c9c2b6;
+  --color-accent: #7a2e26;
+  --color-success: #2f5d46;
+  --color-danger: #a1312a;
+  --color-inverse: #ffffff;
+
+  /* Placeholder image tones (replaced by real photography later). */
+  --color-tone-sand: #d9cfc0;
+  --color-tone-stone: #bfb8ad;
+  --color-tone-clay: #c4a58e;
+  --color-tone-sage: #a9b09c;
+  --color-tone-mist: #c9ccc9;
+  --color-tone-umber: #5b4a3d;
+
+  /* Fonts: serif for editorial display, sans for UI and body. */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-newsreader), ui-serif, Georgia, serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /* Type scale: fluid display sizes, fixed UI sizes. */
+  --text-display: clamp(2.75rem, 1.6rem + 4.8vw, 5.5rem);
+  --text-display--line-height: 1.02;
+  --text-display--letter-spacing: -0.02em;
+  --text-h1: clamp(2.25rem, 1.6rem + 2.8vw, 3.75rem);
+  --text-h1--line-height: 1.05;
+  --text-h1--letter-spacing: -0.02em;
+  --text-h2: clamp(1.75rem, 1.4rem + 1.5vw, 2.5rem);
+  --text-h2--line-height: 1.1;
+  --text-h2--letter-spacing: -0.015em;
+  --text-h3: clamp(1.375rem, 1.2rem + 0.75vw, 1.75rem);
+  --text-h3--line-height: 1.2;
+  --text-h3--letter-spacing: -0.01em;
+  --text-h4: clamp(1.125rem, 1.05rem + 0.3vw, 1.25rem);
+  --text-h4--line-height: 1.3;
+  --text-body-lg: 1.125rem;
+  --text-body-lg--line-height: 1.6;
+  --text-body: 0.9375rem;
+  --text-body--line-height: 1.6;
+  --text-small: 0.8125rem;
+  --text-small--line-height: 1.5;
+  --text-label: 0.6875rem;
+  --text-label--line-height: 1.2;
+  --text-label--letter-spacing: 0.14em;
+
+  --tracking-label: 0.14em;
+  --tracking-tight: -0.02em;
+
+  /* Spacing: Tailwind's 4px scale plus semantic layout spacing. */
+  --spacing-gutter: clamp(1rem, 4vw - 0.4rem, 3rem);
+  --spacing-section: clamp(4rem, 2.5rem + 6vw, 9rem);
+  --spacing-section-sm: clamp(2.5rem, 1.75rem + 3vw, 5rem);
+  --spacing-header: 4rem;
+
+  /* Containers */
+  --container-page: 90rem;
+  --container-narrow: 45rem;
+
+  /* Radius: square by default; pill only for small badges. */
+  --radius-none: 0;
+  --radius-pill: 999px;
+
+  --breakpoint-3xl: 105rem;
+
+  /* Motion */
+  --ease-out-soft: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --duration-fast: 200ms;
+  --duration-slow: 400ms;
+}
