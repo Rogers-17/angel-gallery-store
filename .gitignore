@@ -16,6 +16,9 @@
 # next.js
 /.next/
 /out/
+/.claude
+/prompts
+/references
 
 # production
 /build
