@@ -42,3 +42,4 @@ export const footerNav: { title: string; links: NavLink[] }[] = [
     ],
   },
 ];
+

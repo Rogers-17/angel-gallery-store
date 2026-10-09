@@ -5,7 +5,7 @@ import { useRef, useState } from "react";
 import type { NavLink } from "./nav";
 
 // Native <dialog> gives focus trapping, Esc to close and focus return for free.
-export function MobileMenu({ links }: { links: NavLink[] }) {
+export function MobileMenu({ links, id = "mobile-menu" }: { links: NavLink[]; id?: string }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [open, setOpen] = useState(false);
 
@@ -24,7 +24,7 @@ export function MobileMenu({ links }: { links: NavLink[] }) {
         type="button"
         onClick={show}
         aria-expanded={open}
-        aria-controls="mobile-menu"
+        aria-controls={id}
         className="eyebrow -ml-2 inline-flex h-11 items-center gap-2 px-2 lg:hidden"
       >
         <svg aria-hidden width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor">
@@ -34,7 +34,7 @@ export function MobileMenu({ links }: { links: NavLink[] }) {
       </button>
 
       <dialog
-        id="mobile-menu"
+        id={id}
         ref={dialogRef}
         aria-label="Menu"
         onClose={() => setOpen(false)}

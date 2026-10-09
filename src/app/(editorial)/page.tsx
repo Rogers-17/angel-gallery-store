@@ -7,7 +7,7 @@ import { Eyebrow, Heading } from "@/components/ui/heading";
 import { Media } from "@/components/ui/media";
 import { Section } from "@/components/ui/section";
 import { TextLink } from "@/components/ui/text-link";
-import { categories, formatPrice, heroImage, journalImage, newArrivals } from "./_demo/catalog";
+import { categories, formatPrice, heroImage, journalImage, newArrivals } from "../_demo/catalog";
 
 const values = [
   { title: "Complimentary shipping", body: "On every order over $150, delivered in recyclable packaging." },
@@ -48,7 +48,7 @@ export default function Home() {
       <Section spacing="sm" aria-labelledby="categories-title">
         <Container>
           <Heading id="categories-title" size="h3" className="mb-8">Shop by category</Heading>
-          <ul className="scrollbar-none -mx-gutter flex snap-x snap-mandatory gap-3 overflow-x-auto px-gutter md:mx-0 md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:px-0">
+          <ul className="scrollbar-none -mx-gutter flex snap-x snap-mandatory scroll-px-gutter gap-3 overflow-x-auto px-gutter md:mx-0 md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:px-0">
             {categories.map((category) => (
               <li key={category.name} className="w-[72%] shrink-0 snap-start md:w-auto">
                 <Link href="#" className="group block">

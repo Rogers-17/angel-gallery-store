@@ -18,6 +18,16 @@
   --color-danger: #a1312a;
   --color-inverse: #ffffff;
 
+  /* Semantic roles (themes override these; values here are the Editorial theme). */
+  --color-primary: var(--color-ink);
+  --color-primary-hover: var(--color-ink-soft);
+  --color-primary-fg: var(--color-paper);
+  --color-secondary: transparent;
+  --color-secondary-border: var(--color-ink);
+  --color-secondary-fg: var(--color-ink);
+  --color-secondary-hover: var(--color-ink);
+  --color-secondary-hover-fg: var(--color-paper);
+
   /* Placeholder image tones (replaced by real photography later). */
   --color-tone-sand: #d9cfc0;
   --color-tone-stone: #bfb8ad;
@@ -55,6 +65,9 @@
   --text-label: 0.6875rem;
   --text-label--line-height: 1.2;
   --text-label--letter-spacing: 0.14em;
+  /* Oversized decorative marks (e.g. footer monogram). */
+  --text-watermark: clamp(16rem, 8rem + 22vw, 26rem);
+  --text-watermark--line-height: 1;
 
   --tracking-label: 0.14em;
   --tracking-tight: -0.02em;
@@ -71,6 +84,8 @@
 
   /* Radius: square by default; pill only for small badges. */
   --radius-none: 0;
+  --radius-card: 0;
+  --radius-control: 0;
   --radius-pill: 999px;
 
   --breakpoint-3xl: 105rem;
@@ -79,4 +94,14 @@
   --ease-out-soft: cubic-bezier(0.2, 0.7, 0.2, 1);
   --duration-fast: 200ms;
   --duration-slow: 400ms;
+}
+
+/* Theme-level settings that are not Tailwind utilities. */
+:root {
+  --heading-weight: 400;
+  --heading-variation: normal;
+  --button-case: uppercase;
+  --button-tracking: var(--tracking-label);
+  --button-size: var(--text-label);
+  --button-weight: 500;
 }

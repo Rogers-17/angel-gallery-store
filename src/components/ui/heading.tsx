@@ -22,3 +22,21 @@ export function Heading({ as: Tag = "h2", size, className, ...props }: HeadingPr
 export function Eyebrow({ className, ...props }: ComponentProps<"p">) {
   return <p className={cn("eyebrow text-muted", className)} {...props} />;
 }
+
+type SectionHeaderProps = {
+  id?: string;
+  title: string;
+  subtitle?: string;
+  align?: "start" | "center";
+  className?: string;
+};
+
+/** Section title with an optional muted subtitle. */
+export function SectionHeader({ id, title, subtitle, align = "start", className }: SectionHeaderProps) {
+  return (
+    <div className={cn(align === "center" && "mx-auto max-w-xl text-center", className)}>
+      <Heading id={id} size="h2">{title}</Heading>
+      {subtitle && <p className="mt-3 text-small text-muted">{subtitle}</p>}
+    </div>
+  );
+}

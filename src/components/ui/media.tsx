@@ -23,6 +23,11 @@ const tones = {
 export type MediaRatio = keyof typeof ratios;
 export type MediaTone = keyof typeof tones;
 
+/** Tone background utility class, for image frames built outside `Media`. */
+export function toneClass(tone: MediaTone): string {
+  return tones[tone];
+}
+
 type MediaProps = {
   ratio?: MediaRatio;
   /** Background tone: the placeholder when there is no image, the loading color when there is. */

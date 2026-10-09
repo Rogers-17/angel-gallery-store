@@ -78,15 +78,15 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: var(--radius-none);
+  border-radius: var(--btn-radius, var(--radius-control));
   border-width: 1px;
   border-style: solid;
   font-family: var(--font-sans);
-  font-size: var(--text-label);
+  font-size: var(--button-size);
   line-height: 1;
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  font-weight: 500;
+  letter-spacing: var(--button-tracking);
+  text-transform: var(--button-case);
+  font-weight: var(--button-weight);
   white-space: nowrap;
   cursor: pointer;
   transition-property: color, background-color, border-color, text-decoration-color;
@@ -100,22 +100,34 @@
 }
 
 @utility btn-primary {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-primary-fg);
+  &:hover:not(:disabled) {
+    background-color: var(--color-primary-hover);
+    border-color: var(--color-primary-hover);
+  }
+}
+
+@utility btn-secondary {
+  background-color: var(--color-secondary);
+  border-color: var(--color-secondary-border);
+  color: var(--color-secondary-fg);
+  &:hover:not(:disabled) {
+    background-color: var(--color-secondary-hover);
+    border-color: var(--color-secondary-hover);
+    color: var(--color-secondary-hover-fg);
+  }
+}
+
+/* Solid ink button, independent of the theme primary color (e.g. on photos). */
+@utility btn-dark {
   background-color: var(--color-ink);
   border-color: var(--color-ink);
   color: var(--color-paper);
   &:hover:not(:disabled) {
     background-color: var(--color-ink-soft);
     border-color: var(--color-ink-soft);
-  }
-}
-
-@utility btn-secondary {
-  background-color: transparent;
-  border-color: var(--color-ink);
-  color: var(--color-ink);
-  &:hover:not(:disabled) {
-    background-color: var(--color-ink);
-    color: var(--color-paper);
   }
 }
 
@@ -141,6 +153,10 @@
   }
 }
 
+@utility btn-pill {
+  --btn-radius: var(--radius-pill);
+}
+
 @utility btn-sm {
   height: 2.5rem;
   padding-inline: 1.25rem;
@@ -160,7 +176,7 @@
 @utility field {
   height: 3rem;
   width: 100%;
-  border-radius: var(--radius-none);
+  border-radius: var(--radius-control);
   border: 1px solid var(--color-line-strong);
   background-color: transparent;
   padding-inline: 1rem;

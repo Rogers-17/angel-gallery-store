@@ -1,0 +1,39 @@
+/*
+ * Design B: overrides the Editorial tokens inside `.design-b` only
+ * (the /design-b review page and its product pages). Nothing outside changes.
+ */
+.design-b {
+  --color-paper: #ffffff;
+  --color-surface: #f3f1ee;
+  --color-surface-strong: #e9e4dd;
+  --color-ink: #241c15;
+  --color-ink-soft: #4a3f35;
+  --color-muted: #776d64;
+  --color-line: #ece7e1;
+  --color-line-strong: #d9d1c7;
+  --color-accent: #7b5838;
+
+  --color-primary: #7b5838;
+  --color-primary-hover: #664729;
+  --color-primary-fg: #ffffff;
+  --color-secondary: #efe6da;
+  --color-secondary-border: #efe6da;
+  --color-secondary-fg: #241c15;
+  --color-secondary-hover: #e4d7c6;
+  --color-secondary-hover-fg: #241c15;
+
+  --font-serif: var(--font-fraunces), ui-serif, Georgia, serif;
+  --heading-weight: 650;
+  --heading-variation: "SOFT" 100, "WONK" 0;
+
+  --radius-card: 14px;
+  --radius-control: 8px;
+
+  --button-case: none;
+  --button-tracking: 0;
+  --button-size: var(--text-small);
+  --button-weight: 500;
+
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+}
