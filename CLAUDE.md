@@ -47,7 +47,7 @@ Use:
 
 - Next.js 16 (App Router, TypeScript, `src/` directory, `@/*` import alias)
 - pnpm (package manager — do not use npm or yarn to install)
-- Tailwind CSS v4 (CSS-first config in `src/app/globals.css`; wired through the `@tailwindcss/turbopack` loader in `next.config.ts`)
+- Tailwind CSS v4 (CSS-first config imported from `src/app/globals.css`; compiled by `@tailwindcss/postcss` via `postcss.config.mjs`)
 - Drizzle ORM + drizzle-kit
 - PostgreSQL via Neon (`@neondatabase/serverless`, HTTP driver)
 - Fonts self-hosted via `next/font/local`: Geist from the `geist` package, Newsreader from `@fontsource-variable/newsreader` (do not use `next/font/google`; Google Fonts is unreliable on this network)

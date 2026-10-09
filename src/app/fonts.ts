@@ -4,7 +4,7 @@ export { GeistSans as sans } from "geist/font/sans";
 export { GeistMono as mono } from "geist/font/mono";
 
 // Self-hosted (no Google Fonts request): variable weight, upright + italic.
-export const serif = localFont({
+export const newsreader = localFont({
   src: [
     {
       path: "../../node_modules/@fontsource-variable/newsreader/files/newsreader-latin-wght-normal.woff2",
