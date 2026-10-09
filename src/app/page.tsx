@@ -7,7 +7,7 @@ import { Eyebrow, Heading } from "@/components/ui/heading";
 import { Media } from "@/components/ui/media";
 import { Section } from "@/components/ui/section";
 import { TextLink } from "@/components/ui/text-link";
-import { categories, formatPrice, newArrivals } from "./_demo/catalog";
+import { categories, formatPrice, heroImage, journalImage, newArrivals } from "./_demo/catalog";
 
 const values = [
   { title: "Complimentary shipping", body: "On every order over $150, delivered in recyclable packaging." },
@@ -20,8 +20,16 @@ export default function Home() {
     <main className="flex-1">
       {/* Hero */}
       <section className="relative">
-        <Media ratio="4/5" tone="umber" label="Seasonal collection" className="md:aspect-21/9" />
-        <div className="absolute inset-0 bg-linear-to-t from-ink/55 via-ink/10 to-transparent" />
+        <Media
+          ratio="4/5"
+          tone="sand"
+          src={heroImage.src}
+          alt={heroImage.alt}
+          priority
+          className="md:aspect-21/9"
+        />
+        {/* Darkens the lower half so paper-colored text stays readable on light photos. */}
+        <div className="absolute inset-0 bg-linear-to-t from-ink/75 via-ink/25 to-transparent md:via-ink/20" />
         <Container className="absolute inset-x-0 bottom-0 pb-10 text-paper md:pb-16">
           <Eyebrow className="text-paper/80">Autumn edit</Eyebrow>
           <Heading as="h1" size="display" className="mt-4 max-w-3xl">
@@ -44,7 +52,15 @@ export default function Home() {
             {categories.map((category) => (
               <li key={category.name} className="w-[72%] shrink-0 snap-start md:w-auto">
                 <Link href="#" className="group block">
-                  <Media ratio="3/4" tone={category.tone} hoverTone="sand" />
+                  <Media
+                    ratio="3/4"
+                    tone={category.tone}
+                    src={category.image.src}
+                    alt={category.image.alt}
+                    objectPosition={category.image.position}
+                    sizes="(min-width: 768px) 33vw, 72vw"
+                    zoomOnHover
+                  />
                   <span className="mt-4 flex items-center justify-between">
                     <span className="font-serif text-h4">{category.name}</span>
                     <span aria-hidden className="transition-transform duration-300 ease-out-soft group-hover:translate-x-1">→</span>
@@ -78,7 +94,7 @@ export default function Home() {
                   badge={product.badge}
                   soldOut={product.badge === "Sold out"}
                   tone={product.tone}
-                  hoverTone={product.hoverTone}
+                  image={product.image}
                 />
               </li>
             ))}
@@ -89,7 +105,14 @@ export default function Home() {
       {/* Editorial split */}
       <Section id="journal" aria-labelledby="journal-title">
         <Container className="grid items-center gap-10 md:grid-cols-2 md:gap-16">
-          <Media ratio="4/5" tone="sage" label="Workshop interior" />
+          <Media
+            ratio="4/5"
+            tone="stone"
+            src={journalImage.src}
+            alt={journalImage.alt}
+            objectPosition="object-[70%_center]"
+            sizes="(min-width: 768px) 50vw, 100vw"
+          />
           <div className="max-w-md">
             <Eyebrow>From the journal</Eyebrow>
             <Heading id="journal-title" size="h1" className="mt-4">

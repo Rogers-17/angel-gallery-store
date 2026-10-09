@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
@@ -24,38 +25,67 @@ export type MediaTone = keyof typeof tones;
 
 type MediaProps = {
   ratio?: MediaRatio;
+  /** Background tone: the placeholder when there is no image, the loading color when there is. */
   tone?: MediaTone;
-  /** Second tone revealed when a parent `group` is hovered. */
+  /** Placeholder only: second tone revealed when a parent `group` is hovered. */
   hoverTone?: MediaTone;
-  /** Describes the image; omit for decorative media. */
-  label?: string;
+  /** Image path; omit to render a tonal placeholder. */
+  src?: string;
+  /** Alt text for the image; omit (or "") for decorative media. */
+  alt?: string;
+  /** `next/image` sizes hint, e.g. "(min-width: 1024px) 25vw, 50vw". */
+  sizes?: string;
+  /** Load eagerly (above-the-fold images such as the hero). */
+  priority?: boolean;
+  /** Tailwind object-position class, e.g. "object-top". */
+  objectPosition?: string;
+  /** Slightly zoom the image when a parent `group` is hovered. */
+  zoomOnHover?: boolean;
   className?: string;
   children?: ReactNode;
 };
 
-/** Fixed-ratio image frame. Renders a tonal placeholder until real imagery exists. */
-export function Media({ ratio = "4/5", tone = "sand", hoverTone, label, className, children }: MediaProps) {
+/** Fixed-ratio image frame. Renders a tonal placeholder when no image is given. */
+export function Media({
+  ratio = "4/5",
+  tone = "sand",
+  hoverTone,
+  src,
+  alt = "",
+  sizes = "100vw",
+  priority,
+  objectPosition = "object-center",
+  zoomOnHover,
+  className,
+  children,
+}: MediaProps) {
+  const zoom = "transition-transform duration-700 ease-out-soft group-hover:scale-103";
+
   return (
     <div
-      role={label ? "img" : undefined}
-      aria-label={label}
-      aria-hidden={label ? undefined : true}
-      className={cn("relative overflow-hidden bg-surface", ratios[ratio], className)}
+      role={!src && alt ? "img" : undefined}
+      aria-label={!src && alt ? alt : undefined}
+      className={cn("relative overflow-hidden", tones[tone], ratios[ratio], className)}
     >
-      <div
-        className={cn(
-          "absolute inset-0 transition-transform duration-700 ease-out-soft",
-          hoverTone && "group-hover:scale-103",
-          tones[tone],
-        )}
-      />
-      {hoverTone && (
-        <div
-          className={cn(
-            "absolute inset-0 opacity-0 transition-opacity duration-500 ease-out-soft group-hover:opacity-100",
-            tones[hoverTone],
-          )}
+      {src ? (
+        <Image
+          src={src}
+          alt={alt}
+          fill
+          sizes={sizes}
+          priority={priority}
+          className={cn("object-cover", objectPosition, zoomOnHover && zoom)}
         />
+      ) : (
+        hoverTone && (
+          <div
+            aria-hidden
+            className={cn(
+              "absolute inset-0 opacity-0 transition-opacity duration-500 ease-out-soft group-hover:opacity-100",
+              tones[hoverTone],
+            )}
+          />
+        )
       )}
       {children}
     </div>

@@ -11,6 +11,7 @@ export type ProductCardProps = {
   badge?: string;
   tone: MediaTone;
   hoverTone?: MediaTone;
+  image?: { src: string; alt: string; position?: string };
   soldOut?: boolean;
 };
 
@@ -23,11 +24,22 @@ export function ProductCard({
   badge,
   tone,
   hoverTone,
+  image,
   soldOut,
 }: ProductCardProps) {
   return (
     <Link href={href} className="group block">
-      <Media ratio="4/5" tone={tone} hoverTone={hoverTone} className={cn(soldOut && "opacity-60")}>
+      <Media
+        ratio="4/5"
+        tone={tone}
+        hoverTone={hoverTone}
+        src={image?.src}
+        alt={image?.alt}
+        objectPosition={image?.position}
+        sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
+        zoomOnHover
+        className={cn(soldOut && "opacity-60")}
+      >
         {badge && (
           <span className="eyebrow absolute top-3 left-3 bg-paper px-2 py-1 text-ink">{badge}</span>
         )}

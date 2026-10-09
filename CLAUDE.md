@@ -67,6 +67,7 @@ Premium, editorial, near-monochrome. Full rationale in `prompts/design-system.md
 - Fonts are self-hosted (`src/app/fonts.ts`). Never use `next/font/google`.
 - The site shell (announcement bar, header, footer) is in the root layout; the mobile menu is the only client component.
 - `src/app/_demo/catalog.ts` is temporary demo data for the homepage; replace with Drizzle queries when products exist.
+- Demo photos (Unsplash, credited in `public/images/demo/CREDITS.md`) live in `public/images/demo/` and are self-hosted. Render images through `Media` (`src`/`alt`/`sizes`), which uses `next/image`; without `src` it shows a tonal placeholder. Never hot-link external image hosts.
 
 # Neon Postgres source of truth
 
