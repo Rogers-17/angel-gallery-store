@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { Breadcrumb } from "@/components/product/pdp/breadcrumb";
 import { DetailsAccordion } from "@/components/product/pdp/details-accordion";
 import { ProductGallery } from "@/components/product/pdp/product-gallery";
+import { ProductSkeleton } from "@/components/product/pdp/product-skeleton";
 import { VariantPicker } from "@/components/product/pdp/variant-picker";
 import { ProductCard } from "@/components/product/product-card";
 import { Container } from "@/components/ui/container";
@@ -40,7 +42,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function ProductPage({ params }: PageProps) {
+// Reading `params` suspends, so the product renders inside <Suspense>: navigations show the
+// skeleton instantly instead of blocking (instant navigation, Cache Components).
+export default function ProductPage({ params }: PageProps) {
+  return (
+    <Suspense fallback={<ProductSkeleton />}>
+      <ProductDetails params={params} />
+    </Suspense>
+  );
+}
+
+async function ProductDetails({ params }: PageProps) {
   const product = await getProductBySlug((await params).slug);
   if (!product) notFound();
 
