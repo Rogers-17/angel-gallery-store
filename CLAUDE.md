@@ -52,9 +52,17 @@ Use:
 - PostgreSQL via Neon (`@neondatabase/serverless`, HTTP driver)
 - Zod for validating all user input (forms, server actions, search params)
 - Neon Auth (`@neondatabase/auth`, managed Better Auth) for customer and admin accounts (from roadmap Phase 5)
+- Upstash Redis (`@upstash/redis`) for the `remote` cache handler (`cache-handlers/upstash-remote.js`) and, from Phase 4, rate limiting
+- `tsx` to run CLI scripts in `scripts/` (seed, settings)
 - Fonts self-hosted via `next/font/local`: Geist from the `geist` package, Fraunces from `@fontsource-variable/fraunces` (do not use `next/font/google`; Google Fonts is unreliable on this network)
 
 `next.config.ts` enables `cacheComponents` and `partialPrefetching`. Route handlers and pages that query the database must run at request time (`await connection()` from `next/server`) or cache explicitly with `use cache`.
+
+**Caching rules:**
+
+- Data rendered into the static shell (catalog, settings) uses `"use cache"` + explicit `cacheLife` + `cacheTag` (tags in `src/db/queries/tags.ts`). Mutations invalidate with `updateTag()`.
+- Request-time data (inside Suspense, or depending on `searchParams`, cookies or headers; e.g. Phase 2 filters/search) uses `"use cache: remote"`, stored in Upstash when `UPSTASH_REDIS_REST_*` is set (in-memory otherwise).
+- Never use `"use cache: remote"` for static-shell data: network calls inside the cache handler never resolve during prerendering. The handler times out each Redis call (1.5s) so a stall becomes a cache miss, not a hang.
 
 Build features in the order of the **Implementation roadmap** below and keep its checkboxes up to date. There is no online payment gateway: orders are placed on the site and completed over WhatsApp, with payment off-app (see the roadmap rules).
 
@@ -140,28 +148,29 @@ Rules that follow from this:
 - [x] Storefront UI on demo data: homepage, product details pages, header, footer, mobile menu (efb380b, 3aceedd)
 - [x] Implementation roadmap and client decisions (9eaf2e3)
 
-## Phase 1: Catalog data model
+## Phase 1: Catalog data model ✅
 
 Goal: a real catalog in Neon replaces `src/app/_data/catalog.ts`.
 
-- [ ] **Schema:**
+- [x] **Schema:** (09b6209)
   - `categories`, `collections` + `collection_products`
   - `products`: slug, name, summary, description, materials, care, status `draft|active|archived`, category, badge, SEO fields
   - `product_variants`: sku, colour, size, `price_cents` (USD), `compare_at_cents`, stock, position
   - `product_images`: storage key or URL, alt, position, crop position
   - timestamps on all tables
-- [ ] **`store_settings` table:**
+- [x] **`store_settings` table:** (09b6209)
   - admin WhatsApp number (E.164)
   - USD→LRD exchange rate + `rate_updated_at`
   - payment instructions per method (USSD steps for MTN MoMo and Orange Money, cash-on-delivery note)
   - store contact info
   - WhatsApp order message template
-- [ ] Migrations with drizzle-kit. Indexes: unique slug/sku, status, category.
-- [ ] Seed script (`pnpm db:seed`) that imports the current demo catalog and default settings.
-- [ ] Server-only data-access layer (`src/db/queries/*`) using `use cache` + `cacheTag`, so admin edits can revalidate per product, collection or setting.
-- [ ] `Price` component: USD price plus "≈ L$…" from the current rate. Formatting lives in one money helper (cents, never floats).
-- [ ] Homepage, product pages and `/design-system` read from the database. Delete `_data/catalog.ts`.
-- [ ] Variant-aware product page: colour and size pick a real variant, and price, stock and "sold out" follow it.
+- [x] Migrations with drizzle-kit. Indexes: unique slug/sku, status, category. (09b6209)
+- [x] Seed script (`pnpm db:seed`) that imports the current demo catalog and default settings, plus `pnpm settings:rate` / `pnpm settings:whatsapp` until the admin settings page exists. (09b6209)
+- [x] Server-only data-access layer (`src/db/queries/*`) using `use cache` + `cacheTag`, so admin edits can revalidate per product, collection or setting. (09b6209)
+- [x] Upstash Redis `remote` cache handler with cross-instance tag invalidation and timeouts (09b6209)
+- [x] `Price` component: USD price plus "≈ L$…" from the current rate. Formatting lives in one money helper (cents, never floats). (09b6209)
+- [x] Homepage, product pages and `/design-system` read from the database. Delete `_data/catalog.ts`. (09b6209)
+- [x] Variant-aware product page: colour and size pick a real variant, and price, stock and "sold out" follow it. (09b6209)
 
 ## Phase 2: Browse, search & SEO
 
@@ -200,7 +209,7 @@ Goal: a real catalog in Neon replaces `src/app/_data/catalog.ts`.
   - consent to be contacted on WhatsApp
   - Zod validation; signed-in users are prefilled from their profile
   - the summary shows subtotal (USD + ≈ LRD) and "Delivery fee: agreed on WhatsApp"
-- [ ] **`placeOrder` server action:**
+- [ ] **`placeOrder` server action** (use the `drizzle-orm/neon-serverless` WebSocket driver for a real transaction; the HTTP driver only supports batches):
   - an idempotency key so a double submit can't create two orders
   - re-read prices and stock from the database and compute the subtotal
   - snapshot the line items and the LRD rate
@@ -216,7 +225,7 @@ Goal: a real catalog in Neon replaces `src/app/_data/catalog.ts`.
   - USSD payment steps for the chosen method, from settings
   - the current order status
 - [ ] **Order lookup** (`/orders/lookup`): order number + phone, for buyers who lose the link.
-- [ ] **Abuse protection** on guest checkout: rate limits per IP and phone, a honeypot field (add Cloudflare Turnstile if spam appears), quantity limits.
+- [ ] **Abuse protection** on guest checkout: rate limits per IP and phone (`@upstash/ratelimit` on the existing Upstash database), a honeypot field (add Cloudflare Turnstile if spam appears), quantity limits.
 - [ ] **Inventory policy:** stock is committed when the admin confirms the order (not at placement) and released if it's cancelled. Show availability honestly.
 - [ ] **Tests:** unit tests for money/LRD conversion, phone normalisation and the WhatsApp message builder; an end-to-end test of guest checkout.
 
@@ -297,7 +306,10 @@ Goal: a real catalog in Neon replaces `src/app/_data/catalog.ts`.
 
 Neon Postgres is the source of truth for app data. All database access goes through Drizzle.
 
-- Tables are defined in `src/db/schema.ts` (currently empty).
+- Tables are defined in `src/db/schema.ts` (catalog + `store_settings`). Column names are camelCase in TS and snake_case in SQL (`casing: "snake_case"` in the client, scripts and `drizzle.config.ts`).
+- Read data only through `src/db/queries/*` (server-only, cached, returns plain serializable DTOs from `src/db/queries/types.ts`). Storefront queries return `active` products only.
+- Money is integer USD cents (`src/lib/money.ts` formats USD and ≈ LRD). Phone numbers go through `src/lib/phone.ts` (E.164 `+231…`).
+- CLI scripts (`scripts/*`) use their own client (`scripts/db.ts`): `src/db/index.ts` is `server-only` and can't load outside Next.
 - Get the client with `getDb()` from `@/db`. It is created lazily so builds do not need `DATABASE_URL`.
 - Database modules import `server-only`. Never import `@/db` from client components.
 - After schema changes run `pnpm db:generate`, review the SQL in `drizzle/`, then `pnpm db:migrate`. Use `pnpm db:push` only for prototyping.
@@ -306,7 +318,7 @@ Neon Postgres is the source of truth for app data. All database access goes thro
 
 ```
 src/app/               Routes (App Router): / (home), /products/[slug], /design-system
-src/app/_data/         Temporary demo catalog
+src/content/home.ts    Editorial homepage content (hero, tiles, mosaic, banner, section titles)
 src/app/api/health/    GET — database connectivity check
 src/app/fonts.ts       Font definitions (all self-hosted)
 src/styles/            theme.css (tokens), base.css, components.css (primitives)
@@ -316,18 +328,26 @@ src/components/product/ Product card + product details (pdp/*)
 src/components/home/   Homepage sections (promo tiles, mosaic, CTA banner)
 src/db/index.ts        Drizzle client (server-only, lazy)
 src/db/schema.ts       Drizzle table definitions
+src/db/queries/        Cached, server-only reads (catalog, settings, tags, DTO types)
 src/lib/env.ts         Server-only env access (throws on missing vars)
+src/lib/money.ts       USD cents + LRD formatting
+src/lib/phone.ts       Liberian phone normalisation (E.164) and wa.me digits
+cache-handlers/        Upstash "use cache: remote" handler + Redis key layout
+scripts/               CLI: seed, settings, script-only DB client
 drizzle.config.ts      drizzle-kit config (loads .env / .env.local via @next/env)
 drizzle/               Generated migrations
 ```
 
 # Environment variables
 
-Canonical list lives in `.env.example`. Copy it to `.env.local` (git-ignored). Only `NEXT_PUBLIC_*` values may reach browser code. Read server env through `src/lib/env.ts`.
+Canonical list lives in `.env.example`. Copy it to `.env` (git-ignored). Only `NEXT_PUBLIC_*` values may reach browser code. Read server env through `src/lib/env.ts`.
 
 | Variable       | Purpose                                         | Exposure    |
 | -------------- | ----------------------------------------------- | ----------- |
-| `DATABASE_URL` | Neon pooled connection string (Drizzle + kit)   | server only |
+| `DATABASE_URL` | Neon pooled connection string (Drizzle + kit). Use a development branch locally. | server only |
+| `UPSTASH_REDIS_REST_URL` | Upstash Redis REST URL (remote cache; rate limiting later) | server only |
+| `UPSTASH_REDIS_REST_TOKEN` | Upstash **read-write** REST token (the read-only token fails) | server only |
+| `CACHE_NAMESPACE` | Redis key namespace per environment/database: `local`, `preview`, `production` | server only |
 
 Keep this table and `.env.example` in sync when variables change.
 
@@ -367,6 +387,10 @@ Database:
 - `pnpm db:migrate` — apply migrations
 - `pnpm db:push` — push schema directly (prototyping only)
 - `pnpm db:studio` — open Drizzle Studio
+- `pnpm db:seed` — replace all catalog data with the demo catalog; creates settings if missing (`--reset-settings` overwrites them)
+- `pnpm settings:rate 172.5` — set the LRD per USD rate
+- `pnpm settings:whatsapp +231…` — set the admin WhatsApp number
+- Scripts refuse to run with `NODE_ENV=production` unless `--force` is passed. After a script change, restart `pnpm dev` (or redeploy) to refresh prerendered pages.
 
 Development and runtime:
 
