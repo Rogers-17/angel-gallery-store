@@ -10,7 +10,8 @@ import { Media, type MediaTone } from "@/components/ui/media";
 import { Section } from "@/components/ui/section";
 import { Tag } from "@/components/ui/tag";
 import { TextLink } from "@/components/ui/text-link";
-import { formatPrice, productHref, products } from "../_data/catalog";
+import { getCollectionProducts } from "@/db/queries/catalog";
+import { getStoreSettings } from "@/db/queries/settings";
 
 export const metadata: Metadata = { title: "Design system" };
 
@@ -75,8 +76,11 @@ function Label({ children }: { children: ReactNode }) {
   return <code className="font-mono text-caption text-muted">{children}</code>;
 }
 
-export default function DesignSystemPage() {
-  const sample = products.slice(0, 3);
+export default async function DesignSystemPage() {
+  const [sample, settings] = await Promise.all([
+    getCollectionProducts("new-arrivals").then((items) => items.slice(0, 3)),
+    getStoreSettings(),
+  ]);
 
   return (
     <main className="flex-1">
@@ -214,16 +218,7 @@ export default function DesignSystemPage() {
         <ProductGrid>
           {sample.map((product) => (
             <li key={product.slug}>
-              <ProductCard
-                href={productHref(product.slug)}
-                name={product.name}
-                summary={product.summary}
-                tag={product.tag}
-                price={formatPrice(product.price)}
-                compareAtPrice={product.compareAtPrice ? formatPrice(product.compareAtPrice) : undefined}
-                badge={product.badge}
-                image={product.image}
-              />
+              <ProductCard product={product} lrdPerUsd={settings.lrdPerUsd} />
             </li>
           ))}
         </ProductGrid>

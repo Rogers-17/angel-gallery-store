@@ -9,24 +9,20 @@ import { ProductGrid } from "@/components/ui/grid";
 import { Heading, SectionHeader } from "@/components/ui/heading";
 import { Media } from "@/components/ui/media";
 import { Section } from "@/components/ui/section";
-import {
-  banner,
-  formatPrice,
-  hero,
-  mosaic,
-  newArrivals,
-  type Product,
-  productHref,
-  promoTiles,
-  summerCollection,
-} from "./_data/catalog";
+import { banner, hero, mosaic, productSections, promoTiles } from "@/content/home";
+import { getCollectionProducts } from "@/db/queries/catalog";
+import { getStoreSettings } from "@/db/queries/settings";
 
-function ProductSection({ id, title, subtitle, products }: {
+async function ProductSection({ id, collection, title, subtitle, lrdPerUsd }: {
   id: string;
+  collection: string;
   title: string;
   subtitle: string;
-  products: Product[];
+  lrdPerUsd: number;
 }) {
+  const products = await getCollectionProducts(collection);
+  if (products.length === 0) return null;
+
   return (
     <Section id={id} spacing="sm" aria-labelledby={`${id}-title`}>
       <Container>
@@ -34,16 +30,7 @@ function ProductSection({ id, title, subtitle, products }: {
         <ProductGrid>
           {products.map((product) => (
             <li key={product.slug}>
-              <ProductCard
-                href={productHref(product.slug)}
-                name={product.name}
-                summary={product.summary}
-                tag={product.tag}
-                price={formatPrice(product.price)}
-                compareAtPrice={product.compareAtPrice ? formatPrice(product.compareAtPrice) : undefined}
-                badge={product.badge}
-                image={product.image}
-              />
+              <ProductCard product={product} lrdPerUsd={lrdPerUsd} />
             </li>
           ))}
         </ProductGrid>
@@ -57,7 +44,9 @@ function ProductSection({ id, title, subtitle, products }: {
   );
 }
 
-export default function Home() {
+export default async function Home() {
+  const { lrdPerUsd } = await getStoreSettings();
+
   return (
     <main className="flex-1">
       {/* Hero: the transparent header floats over it. */}
@@ -99,12 +88,7 @@ export default function Home() {
         </Container>
       </Section>
 
-      <ProductSection
-        id="new-arrivals"
-        title="Newly Dropped Collections"
-        subtitle="Fresh footwear from the workshops we work with: timeless shapes, honest materials and built-in comfort."
-        products={newArrivals}
-      />
+      <ProductSection {...productSections.newArrivals} lrdPerUsd={lrdPerUsd} />
 
       <Section id="recommended" spacing="sm" aria-labelledby="recommended-title">
         <Container>
@@ -118,12 +102,7 @@ export default function Home() {
         </Container>
       </Section>
 
-      <ProductSection
-        id="summer"
-        title="Summer Collections"
-        subtitle="Light layers and bags that carry the season, made in small runs from natural materials."
-        products={summerCollection}
-      />
+      <ProductSection {...productSections.summer} lrdPerUsd={lrdPerUsd} />
 
       <Section aria-labelledby="banner-title">
         <Container>

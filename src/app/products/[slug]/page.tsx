@@ -1,49 +1,54 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { HeartIcon } from "@/components/layout/icons";
 import { Breadcrumb } from "@/components/product/pdp/breadcrumb";
 import { DetailsAccordion } from "@/components/product/pdp/details-accordion";
-import { ColorPicker, SizePicker } from "@/components/product/pdp/option-picker";
 import { ProductGallery } from "@/components/product/pdp/product-gallery";
-import { Quantity } from "@/components/product/pdp/quantity";
+import { VariantPicker } from "@/components/product/pdp/variant-picker";
 import { ProductCard } from "@/components/product/product-card";
-import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { ProductGrid } from "@/components/ui/grid";
 import { Heading, SectionHeader } from "@/components/ui/heading";
 import { Section } from "@/components/ui/section";
 import { Tag } from "@/components/ui/tag";
-import {
-  formatPrice,
-  getProduct,
-  getRelatedProducts,
-  productHref,
-  products,
-} from "../../_data/catalog";
+import { getActiveProductSlugs, getProductBySlug, getRelatedProducts } from "@/db/queries/catalog";
+import { getStoreSettings } from "@/db/queries/settings";
+import { formatRate } from "@/lib/money";
 
 type PageProps = { params: Promise<{ slug: string }> };
 
-export function generateStaticParams() {
-  return products.map((product) => ({ slug: product.slug }));
+const badgeLabels = { new: "New", bestseller: "Bestseller" } as const;
+
+const rateDateFormatter = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" });
+
+const perks = [
+  "Order on WhatsApp: we confirm delivery and payment with you in the chat",
+  "Delivery anywhere in Montserrado County, or pickup by arrangement",
+  "Pay cash on delivery, MTN Mobile Money or Orange Money",
+];
+
+export async function generateStaticParams() {
+  const slugs = await getActiveProductSlugs();
+  return slugs.map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const product = getProduct((await params).slug);
-  return product ? { title: product.name, description: product.summary } : {};
+  const product = await getProductBySlug((await params).slug);
+  if (!product) return {};
+  return {
+    title: product.seoTitle ?? product.name,
+    description: product.seoDescription ?? product.summary,
+  };
 }
 
-const perks = [
-  "Free shipping on orders over $150",
-  "Free 30-day returns and exchanges",
-  "Secure checkout",
-];
-
 export default async function ProductPage({ params }: PageProps) {
-  const product = getProduct((await params).slug);
+  const product = await getProductBySlug((await params).slug);
   if (!product) notFound();
 
-  const related = getRelatedProducts(product);
-  const sectionHref = product.collection === "summer" ? "/#summer" : "/#new-arrivals";
+  const [related, settings] = await Promise.all([
+    getRelatedProducts(product.id, product.category.id),
+    getStoreSettings(),
+  ]);
+  const primaryImage = product.images[0];
 
   return (
     <main className="flex-1">
@@ -51,58 +56,41 @@ export default async function ProductPage({ params }: PageProps) {
         <Breadcrumb
           items={[
             { label: "Home", href: "/" },
-            { label: product.department, href: sectionHref },
+            { label: product.category.name, href: product.category.slug === "shoes" ? "/#new-arrivals" : "/#summer" },
             { label: product.name },
           ]}
         />
 
         <div className="mt-8 grid gap-10 lg:grid-cols-2 lg:gap-16">
-          <ProductGallery
-            src={product.image.src}
-            alt={product.image.alt}
-            position={product.image.position}
-          />
+          {primaryImage && (
+            <ProductGallery
+              src={primaryImage.url}
+              alt={primaryImage.alt}
+              position={primaryImage.objectPosition ?? undefined}
+            />
+          )}
 
           <div className="flex flex-col gap-8">
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <Tag>{product.tag}</Tag>
-                {product.badge && <Tag>{product.badge}</Tag>}
+                {product.badge && <Tag>{badgeLabels[product.badge]}</Tag>}
               </div>
               <Heading as="h1" size="h1" className="mt-4">{product.name}</Heading>
-              <p className="mt-4 text-price font-semibold tabular-nums">
-                {product.compareAtPrice ? (
-                  <>
-                    <span className="text-primary">{formatPrice(product.price)}</span>{" "}
-                    <s className="text-body font-normal text-muted">{formatPrice(product.compareAtPrice)}</s>
-                  </>
-                ) : (
-                  formatPrice(product.price)
-                )}
-              </p>
               <p className="mt-4 max-w-prose text-body text-ink-soft">{product.summary}</p>
             </div>
 
-            {/* Visual only until the cart feature is built. */}
-            <form className="flex flex-col gap-7">
-              <ColorPicker name="color" colors={product.colors} />
-              <SizePicker name="size" sizes={product.sizes} />
-              <Quantity />
-              <div className="flex gap-2">
-                <div className="grid flex-1 gap-2 sm:grid-cols-2">
-                  <Button variant="secondary" size="lg">Add to Cart</Button>
-                  <Button variant="primary" size="lg">Buy Now</Button>
-                </div>
-                <Button variant="secondary" size="lg" aria-label="Add to wishlist" className="shrink-0 px-0! w-14">
-                  <HeartIcon />
-                </Button>
-              </div>
-            </form>
+            <VariantPicker variants={product.variants} lrdPerUsd={settings.lrdPerUsd} />
+
+            <p className="text-caption text-muted">
+              Prices in USD. LRD amounts are approximate at {formatRate(settings.lrdPerUsd)} per $1
+              (updated {rateDateFormatter.format(new Date(settings.lrdRateUpdatedAt))}).
+            </p>
 
             <ul className="flex flex-col gap-2 rounded-card bg-surface p-5 text-small text-ink-soft">
               {perks.map((perk) => (
                 <li key={perk} className="flex items-center gap-3">
-                  <span aria-hidden className="size-1.5 rounded-pill bg-primary" />
+                  <span aria-hidden className="size-1.5 shrink-0 rounded-pill bg-primary" />
                   {perk}
                 </li>
               ))}
@@ -118,16 +106,17 @@ export default async function ProductPage({ params }: PageProps) {
                       <ul className="list-disc pl-5">
                         {product.materials.map((material) => <li key={material}>{material}</li>)}
                       </ul>
-                      <p className="mt-3">{product.care}</p>
+                      {product.care && <p className="mt-3">{product.care}</p>}
                     </>
                   ),
                 },
                 {
-                  title: "Shipping & returns",
+                  title: "Delivery & payment",
                   content: (
                     <p>
-                      Ships within 2–3 business days. Free standard shipping on orders over $150.
-                      Return or exchange unworn items within 30 days.
+                      Place your order and send it to us on WhatsApp. We agree the delivery fee, time
+                      and payment with you in the chat. We deliver anywhere in Montserrado County, and
+                      pickup can be arranged. Pay cash on delivery, by MTN Mobile Money or by Orange Money.
                     </p>
                   ),
                 },
@@ -137,33 +126,25 @@ export default async function ProductPage({ params }: PageProps) {
         </div>
       </Container>
 
-      <Section spacing="sm" divider aria-labelledby="related-title">
-        <Container>
-          <SectionHeader
-            id="related-title"
-            title="You May Also Like"
-            subtitle="More pieces chosen to go with this one."
-            align="center"
-            className="mb-12"
-          />
-          <ProductGrid>
-            {related.map((item) => (
-              <li key={item.slug}>
-                <ProductCard
-                  href={productHref(item.slug)}
-                  name={item.name}
-                  summary={item.summary}
-                  tag={item.tag}
-                  price={formatPrice(item.price)}
-                  compareAtPrice={item.compareAtPrice ? formatPrice(item.compareAtPrice) : undefined}
-                  badge={item.badge}
-                  image={item.image}
-                />
-              </li>
-            ))}
-          </ProductGrid>
-        </Container>
-      </Section>
+      {related.length > 0 && (
+        <Section spacing="sm" divider aria-labelledby="related-title">
+          <Container>
+            <SectionHeader
+              id="related-title"
+              title="You May Also Like"
+              subtitle="More pieces chosen to go with this one."
+              className="mb-12"
+            />
+            <ProductGrid>
+              {related.map((item) => (
+                <li key={item.slug}>
+                  <ProductCard product={item} lrdPerUsd={settings.lrdPerUsd} />
+                </li>
+              ))}
+            </ProductGrid>
+          </Container>
+        </Section>
+      )}
     </main>
   );
 }

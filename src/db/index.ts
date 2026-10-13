@@ -10,6 +10,6 @@ let db: Database | undefined;
 
 // Created lazily so builds don't require DATABASE_URL.
 export function getDb(): Database {
-  db ??= drizzle({ client: neon(serverEnv.databaseUrl), schema });
+  db ??= drizzle({ client: neon(serverEnv.databaseUrl), schema, casing: "snake_case" });
   return db;
 }
