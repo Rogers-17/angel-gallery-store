@@ -50,11 +50,13 @@ Use:
 - Tailwind CSS v4 (CSS-first config imported from `src/app/globals.css`; compiled by `@tailwindcss/postcss` via `postcss.config.mjs`)
 - Drizzle ORM + drizzle-kit
 - PostgreSQL via Neon (`@neondatabase/serverless`, HTTP driver)
+- Zod for validating all user input (forms, server actions, search params)
+- Neon Auth (`@neondatabase/auth`, managed Better Auth) for customer and admin accounts (from roadmap Phase 5)
 - Fonts self-hosted via `next/font/local`: Geist from the `geist` package, Fraunces from `@fontsource-variable/fraunces` (do not use `next/font/google`; Google Fonts is unreliable on this network)
 
 `next.config.ts` enables `cacheComponents` and `partialPrefetching`. Route handlers and pages that query the database must run at request time (`await connection()` from `next/server`) or cache explicitly with `use cache`.
 
-Not built yet — do not add unless explicitly requested: e-commerce features, auth flows, payments, deployment config.
+Build features in the order of the **Implementation roadmap** below and keep its checkboxes up to date. There is no online payment gateway: orders are completed over WhatsApp (see the roadmap business rules).
 
 # Design system
 
@@ -79,6 +81,173 @@ Warm, bold storefront (the client-approved "design B"): white canvas, espresso i
 - The store shell (header, footer) is in the root layout. The header is transparent over the homepage hero and solid elsewhere (`header-frame.tsx`).
 - `src/app/_data/catalog.ts` is temporary demo data; replace with Drizzle queries when products exist. Demo photos (Unsplash, credited in `public/images/demo/CREDITS.md`) are self-hosted; render images through `Media` (`next/image`). Never hot-link external image hosts.
 - Cart, wishlist, newsletter and hero arrows are visual only until those features are built. `/design-b` URLs redirect to `/` (`next.config.ts`).
+
+# Implementation roadmap
+
+The plan for building the whole store. Work through it top to bottom.
+
+**How to use it**
+
+- Status: `[x]` done, `[~]` in progress, `[ ]` to do.
+- Each item (or small group of items) goes through the normal workflow: prompt → approval → implement → checks → commit.
+- When an item is finished and committed, tick it and add the short commit hash, e.g. `- [x] Seed script (a1b2c3d)`. Commit that CLAUDE.md update with the work.
+- Don't start a phase before the phases it depends on are done, unless the user says so. Resolve a phase's open decisions (ask the user) before writing its prompt.
+- If scope changes, edit this roadmap first, then build.
+
+## Business rules (apply to every phase)
+
+- **No online payment gateway.** Stripe, Paystack and similar are unavailable in Liberia. Checkout creates an order and hands it to WhatsApp. The buyer and the admin settle **payment** there: MTN Mobile Money or Orange Money via USSD, or cash on delivery if enabled. They also arrange **delivery** there. The admin records the payment in the dashboard. The site never collects card or wallet details.
+- **Guest checkout is first-class.** An account is never required to order. Accounts only add convenience: order history, saved addresses, faster checkout.
+- **The database order is the source of truth.** WhatsApp is the conversation channel, never the record. Every order exists in Neon before the WhatsApp hand-off.
+- **Never trust the client** for prices, stock, totals or order status. Recompute everything server-side from the database when the order is placed, and snapshot it on the order.
+- **Phone numbers are identity for guests.** Validate and normalise every phone number to E.164 (Liberia: `+231…`). Guests track an order through a secret link and can also look it up with order number + phone.
+- **Money** is stored as integers in minor units (cents) with a currency code. Never use floats.
+
+## Open decisions
+
+Ask about each one when its phase starts.
+
+| Decision | Options | Phase |
+| --- | --- | --- |
+| Currency | USD only, or USD with LRD shown (admin-set exchange rate) | 1 |
+| Delivery | Zones (e.g. Monrovia areas vs. other counties) and fees; pickup point? | 4 |
+| Cash on delivery | Allowed alongside mobile money? | 4 |
+| Admin alerts | WhatsApp click-to-chat only, or also WhatsApp Cloud API alerts (needs Meta Business verification, approved templates, per-message cost) | 4 / 7 |
+| Staff | One admin, or `owner` + `staff` roles | 5 |
+| Email | Provider for receipts and auth emails, or rely on Neon Auth's built-in emails | 5 / 7 |
+| Image uploads | Vercel Blob, Cloudinary or UploadThing | 6 |
+
+## Phase 0: Foundation ✅
+
+- [x] Next.js 16 + TypeScript + Tailwind v4 + pnpm scaffold, Drizzle + Neon client, `/api/health` (8481fe1)
+- [x] CLAUDE.md workflow and commit rules (8e7d619, 691af05)
+- [x] Global design system: tokens, primitives, `/design-system` (3aceedd)
+- [x] Storefront UI on demo data: homepage, product details pages, header, footer, mobile menu (efb380b, 3aceedd)
+
+## Phase 1: Catalog data model
+
+Goal: a real catalog in Neon replaces `src/app/_data/catalog.ts`.
+
+- [ ] **Schema:**
+  - `categories`, `collections` + `collection_products`
+  - `products`: slug, name, summary, description, materials, care, status `draft|active|archived`, category, badge, SEO fields
+  - `product_variants`: sku, colour, size, price, compare-at price, stock, position
+  - `product_images`: url, alt, position, crop position
+  - timestamps on all tables; money in minor units
+- [ ] Migrations with drizzle-kit. Indexes: unique slug/sku, status, category.
+- [ ] Seed script (`pnpm db:seed`) that imports the current demo catalog.
+- [ ] Server-only data-access layer (`src/db/queries/*`) using `use cache` + `cacheTag`, so admin edits can revalidate per product or collection.
+- [ ] Homepage, product pages and `/design-system` read from the database. Delete `_data/catalog.ts`.
+- [ ] Variant-aware product page: colour and size pick a real variant, and price, stock and "sold out" follow it.
+
+## Phase 2: Browse, search & SEO
+
+- [ ] Listing pages (`/shop`, `/shop/[category]`, `/collections/[slug]`) with sort (newest, price) and filters (category, size, colour, price) in URL search params, plus pagination.
+- [ ] Search (`/search`) using Postgres full-text or trigram search over name, summary and tags.
+- [ ] Header, footer and homepage links point to real pages (no `#` placeholders left).
+- [ ] SEO: per-page metadata and Open Graph images, Product JSON-LD (price, availability), `sitemap.ts`, `robots.ts`, canonical URLs.
+- [ ] Loading, empty and not-found states for every listing.
+
+## Phase 3: Cart (guest-first)
+
+- [ ] `carts` + `cart_items` tables. The cart ID lives in an httpOnly, signed cookie, so guests get a persistent cart with no account.
+- [ ] Server actions to add, update quantity and remove. Each one checks the variant exists, is active and is in stock, and caps quantities.
+- [ ] Cart drawer (header bag icon with live count) and a `/cart` page. Totals are always recomputed on the server.
+- [ ] Cart expiry (e.g. 30 days) and cleanup.
+
+## Phase 4: Checkout & WhatsApp order hand-off (core flow)
+
+- [ ] **Order tables:**
+  - `orders`: human number like `AG-1027`, status, optional `customer_id`, contact name / WhatsApp phone / optional email, delivery method, zone, address, landmark and notes, preferred payment method, subtotal, delivery fee, total, currency, hashed guest access token, idempotency key, timestamps
+  - `order_items`: snapshot of name, variant label, sku, unit price, quantity, line total, image
+  - `order_events`: status history with actor and note
+  - `payments`
+- [ ] **Store settings** in the database, seeded now and editable in admin later: admin WhatsApp number (E.164), currency, delivery zones and fees, payment instructions per method (MTN MoMo, Orange Money, cash on delivery), order message template.
+- [ ] **`/checkout`** for guests and signed-in users:
+  - contact: full name, WhatsApp phone (required, validated, normalised to `+231…`), email (optional)
+  - delivery or pickup, with zone, address, landmark and notes
+  - preferred payment method
+  - consent to be contacted on WhatsApp
+  - Zod validation; signed-in users are prefilled
+- [ ] **`placeOrder` server action:**
+  - an idempotency key so a double submit can't create two orders
+  - re-read prices and stock from the database and compute subtotal, delivery fee and total
+  - snapshot the line items
+  - create the order as `pending` with an order number and a guest access token (store only its hash)
+  - clear the cart
+- [ ] **WhatsApp message builder** (server-side):
+  - contents: order number, items (variant, quantity, price), totals, delivery details, customer name and phone, and the admin link to the order
+  - output: `https://wa.me/<admin-number>?text=<encoded>`, kept under URL length limits (summarise long orders)
+- [ ] **Order confirmation page** (`/orders/[number]?token=…`):
+  - a "Send order on WhatsApp" primary button that opens the chat with the admin
+  - the order summary
+  - payment instructions for the chosen method (USSD steps)
+  - a "what happens next" timeline
+  - the current order status
+- [ ] **Order lookup** (`/orders/lookup`): order number + phone, for buyers who lose the link.
+- [ ] **Abuse protection** on guest checkout: rate limits per IP and phone, a honeypot field (add Cloudflare Turnstile if spam appears), quantity limits.
+- [ ] **Inventory policy:** stock is committed when the admin confirms the order (not at placement) and released if it's cancelled. Show availability honestly.
+- [ ] **Tests:** unit tests for pricing, phone normalisation and the WhatsApp message builder; an end-to-end test of guest checkout.
+
+## Phase 5: Authentication (Neon Auth, managed Better Auth)
+
+- [ ] **Setup:**
+  - enable Auth in the Neon console (Project → Branch → Auth)
+  - install `@neondatabase/auth`
+  - env vars `NEON_AUTH_BASE_URL` and `NEON_AUTH_COOKIE_SECRET`
+  - `src/lib/auth/server.ts` (`createNeonAuth`) and `src/lib/auth/client.ts`
+  - catch-all route `src/app/api/auth/[...path]/route.ts`
+  - `src/proxy.ts` (it must live in `src/`) guarding `/account/*` and `/admin/*`
+- [ ] **Sessions:** read the session at request time inside Suspense boundaries (Cache Components; no `force-dynamic`) through a per-request `getCurrentUser()` helper. Wrap SDK calls in try/catch (the beta client throws on failure).
+- [ ] **Customer auth UI** in the design system: sign up, sign in, sign out, forgot/reset password, plus the email-verification decision.
+- [ ] **`customers` profile table** linked to `neon_auth.user.id` (phone, default address). Account pages: profile, saved addresses, order history, order detail.
+- [ ] **Claim guest orders:** after sign-up or sign-in, offer to attach past guest orders that match the verified email or phone.
+- [ ] Merge the guest cart into the account on sign-in, and prefill checkout from the profile.
+- [ ] **Admin access:**
+  - app-level `staff` table (user ID + role)
+  - the first owner is bootstrapped by a seed/CLI script, never through public sign-up
+  - every admin page and server action re-checks the role on the server; the proxy is only the first gate
+
+## Phase 6: Admin dashboard
+
+- [ ] `/admin` layout (role-guarded, `noindex`). Overview: new orders awaiting confirmation, orders awaiting payment, recorded revenue, low stock.
+- [ ] **Orders:**
+  - list with filters (status, date, payment method, search by number or phone) and a detail page
+  - status workflow: `pending → confirmed → awaiting_payment → paid → processing → out_for_delivery → delivered`, plus `cancelled` and `refunded`
+  - every change is written to `order_events`
+- [ ] **Payment recording:**
+  - fields: method (MTN MoMo, Orange Money or cash), amount, transaction reference from the mobile-money confirmation, received-at, recorded-by
+  - partial payments are allowed; the order becomes `paid` when fully paid
+- [ ] **WhatsApp from admin:** a "Message customer" button with prefilled messages for confirmed + payment instructions, payment received, out for delivery and delivered.
+- [ ] **Catalog management:**
+  - products: create, edit, publish and archive
+  - variants, and stock adjustments with a reason
+  - image upload (provider decision)
+  - categories and collections
+- [ ] **Customers:** guests and account holders with their order history.
+- [ ] **Store settings UI:** WhatsApp number, delivery zones and fees, payment instructions, store info, policy page content.
+- [ ] Every admin change revalidates the affected cache tags.
+
+## Phase 7: Notifications
+
+- [ ] The order status page reflects admin updates in real time for buyers holding the order link.
+- [ ] Optional email receipts and status emails for buyers who gave an email (provider decision).
+- [ ] Optional WhatsApp Cloud API alert to the admin the moment an order is placed, even if the buyer never presses Send (approved template, Meta Business verification).
+
+## Phase 8: Trust, quality & launch
+
+- [ ] Content pages:
+  - How to Order & Pay, with mobile-money USSD steps (admin-editable)
+  - Delivery & Returns
+  - FAQ, Contact
+  - Privacy Policy, Terms & Conditions
+- [ ] Optional wishlist: stored in the browser for guests, synced for account holders.
+- [ ] **Accessibility:** keyboard, focus, contrast and screen-reader labels.
+- [ ] **Performance:** image sizes and LCP; Lighthouse 90+ on mobile.
+- [ ] **Monitoring:** privacy-friendly analytics, error monitoring, structured logs for the order flow.
+- [ ] **Security review:** validation on every input, rate limits, auth checks on every server action, no secrets in client code, security headers.
+- [ ] **Production:** Vercel project and env vars, a Neon production branch with preview branches (auth state branches with the database), custom domain, backups and point-in-time restore.
+- [ ] Replace the demo photos and catalog with real content; remove the `/design-b` redirects.
 
 # Neon Postgres source of truth
 
