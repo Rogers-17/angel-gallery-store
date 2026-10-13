@@ -1,9 +1,10 @@
 /*
- * Reusable primitives as Tailwind utilities, so they compose with variants
- * (md:, hover:, ...) and stay in sync with the React components in src/components/ui.
+ * Reusable primitives as Tailwind utilities, so they compose with variants (md:, hover:, …)
+ * and stay in sync with the React components in src/components/ui.
  */
 
-/* Layout */
+/* ── Layout ─────────────────────────────────────────────────────────── */
+
 @utility container-page {
   width: 100%;
   max-width: var(--container-page);
@@ -37,17 +38,31 @@
   }
 }
 
-/* Type */
-@utility eyebrow {
-  font-family: var(--font-sans);
-  font-size: var(--text-label);
-  line-height: var(--text-label--line-height);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  font-weight: 500;
+/* ── Surfaces ───────────────────────────────────────────────────────── */
+
+/* Product image well: soft vertical gradient, rounded like a card. */
+@utility well {
+  border-radius: var(--radius-card);
+  background-image: linear-gradient(180deg, var(--color-well-from), var(--color-well-to));
 }
 
-/* Links */
+/* Small category pill: warm beige with brown text. */
+@utility tag {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-tag);
+  color: var(--color-tag-fg);
+  padding: 0.25rem 0.625rem;
+  font-size: var(--text-label);
+  line-height: var(--text-label--line-height);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* ── Links ──────────────────────────────────────────────────────────── */
+
+/* Navigation / CTA links: underline grows on hover. */
 @utility link-underline {
   background-image: linear-gradient(currentColor, currentColor);
   background-position: 0 100%;
@@ -61,6 +76,7 @@
   }
 }
 
+/* Links inside body copy: always underlined. */
 @utility link-inline {
   text-decoration-line: underline;
   text-decoration-thickness: 1px;
@@ -72,21 +88,20 @@
   }
 }
 
-/* Buttons: combine btn + one variant + one size, e.g. "btn btn-primary btn-md". */
+/* ── Buttons ────────────────────────────────────────────────────────── */
+/* Combine btn + one variant + one size, e.g. "btn btn-primary btn-md". */
+
 @utility btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
   border-radius: var(--btn-radius, var(--radius-control));
-  border-width: 1px;
-  border-style: solid;
+  border: 1px solid transparent;
   font-family: var(--font-sans);
-  font-size: var(--button-size);
+  font-size: var(--text-small);
   line-height: 1;
-  letter-spacing: var(--button-tracking);
-  text-transform: var(--button-case);
-  font-weight: var(--button-weight);
+  font-weight: 500;
   white-space: nowrap;
   cursor: pointer;
   transition-property: color, background-color, border-color, text-decoration-color;
@@ -94,56 +109,61 @@
   transition-timing-function: var(--ease-out-soft);
   &:disabled,
   &[aria-disabled="true"] {
-    opacity: 0.4;
+    opacity: 0.45;
     cursor: not-allowed;
   }
 }
 
+/* Caramel: the main action (Buy Now). */
 @utility btn-primary {
   background-color: var(--color-primary);
-  border-color: var(--color-primary);
   color: var(--color-primary-fg);
   &:hover:not(:disabled) {
     background-color: var(--color-primary-hover);
-    border-color: var(--color-primary-hover);
   }
 }
 
+/* Beige: the companion action (Add to Cart). */
 @utility btn-secondary {
   background-color: var(--color-secondary);
-  border-color: var(--color-secondary-border);
-  color: var(--color-secondary-fg);
-  &:hover:not(:disabled) {
-    background-color: var(--color-secondary-hover);
-    border-color: var(--color-secondary-hover);
-    color: var(--color-secondary-hover-fg);
-  }
-}
-
-/* Solid ink button, independent of the theme primary color (e.g. on photos). */
-@utility btn-dark {
-  background-color: var(--color-ink);
-  border-color: var(--color-ink);
-  color: var(--color-paper);
-  &:hover:not(:disabled) {
-    background-color: var(--color-ink-soft);
-    border-color: var(--color-ink-soft);
-  }
-}
-
-@utility btn-inverse {
-  background-color: var(--color-paper);
-  border-color: var(--color-paper);
   color: var(--color-ink);
   &:hover:not(:disabled) {
-    background-color: transparent;
-    color: var(--color-paper);
+    background-color: var(--color-secondary-hover);
   }
 }
 
+/* Cream: light action on photos and dark surfaces (Shop Now, footer Subscribe). */
+@utility btn-cream {
+  background-color: var(--color-cream);
+  color: var(--color-ink);
+  &:hover:not(:disabled) {
+    background-color: var(--color-cream-hover);
+  }
+}
+
+/* Espresso: solid dark action on light imagery (promo tiles, carousel arrows). */
+@utility btn-dark {
+  background-color: var(--color-ink);
+  color: var(--color-cream);
+  &:hover:not(:disabled) {
+    background-color: var(--color-ink-soft);
+  }
+}
+
+/* Outline: low-emphasis action (See More Collections). */
+@utility btn-outline {
+  background-color: transparent;
+  border-color: var(--color-line-strong);
+  color: var(--color-ink);
+  &:hover:not(:disabled) {
+    background-color: var(--color-secondary);
+    border-color: var(--color-secondary);
+  }
+}
+
+/* Ghost: text-only action. */
 @utility btn-ghost {
   background-color: transparent;
-  border-color: transparent;
   color: currentColor;
   text-decoration-line: underline;
   text-decoration-color: transparent;
@@ -163,24 +183,34 @@
 }
 
 @utility btn-md {
-  height: 3rem;
-  padding-inline: 1.75rem;
+  height: 2.75rem;
+  padding-inline: 1.5rem;
 }
 
 @utility btn-lg {
-  height: 3.5rem;
-  padding-inline: 2.25rem;
+  height: 3.25rem;
+  padding-inline: 2rem;
+  font-size: var(--text-body);
 }
 
-/* Form fields */
+/* Circular icon-only button; pair with a variant. */
+@utility btn-icon {
+  --btn-radius: var(--radius-pill);
+  height: 2.75rem;
+  width: 2.75rem;
+  padding: 0;
+}
+
+/* ── Fields ─────────────────────────────────────────────────────────── */
+
 @utility field {
-  height: 3rem;
+  height: 2.75rem;
   width: 100%;
   border-radius: var(--radius-control);
   border: 1px solid var(--color-line-strong);
-  background-color: transparent;
+  background-color: var(--color-paper);
   padding-inline: 1rem;
-  font-size: var(--text-body);
+  font-size: var(--text-small);
   color: var(--color-ink);
   transition: border-color var(--duration-fast) var(--ease-out-soft);
   &::placeholder {
@@ -192,7 +222,28 @@
   }
 }
 
-/* Placeholder imagery: a softly lit tonal surface per tone token (tone-sand, tone-clay, ...). */
+/* Filled field for dark surfaces (footer newsletter). */
+@utility field-dark {
+  height: 2.75rem;
+  width: 100%;
+  border-radius: var(--radius-control);
+  border: 1px solid transparent;
+  background-color: var(--color-espresso-soft);
+  padding-inline: 1rem;
+  font-size: var(--text-small);
+  color: var(--color-cream);
+  transition: border-color var(--duration-fast) var(--ease-out-soft);
+  &::placeholder {
+    color: color-mix(in oklab, var(--color-cream) 55%, transparent);
+  }
+  &:focus {
+    outline: none;
+    border-color: var(--color-cream);
+  }
+}
+
+/* ── Placeholder imagery ────────────────────────────────────────────── */
+/* A softly lit tonal surface per tone token (tone-sand, tone-clay, …). */
 @utility tone-* {
   --tone: --value(--color-tone-*);
   background-color: var(--tone);

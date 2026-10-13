@@ -3,10 +3,17 @@ import type { ComponentProps } from "react";
 import { cn } from "@/lib/cn";
 
 const variants = {
+  /** Caramel: the main action. */
   primary: "btn-primary",
+  /** Beige: companion action. */
   secondary: "btn-secondary",
-  inverse: "btn-inverse",
+  /** Cream: light action on photos and dark surfaces. */
+  cream: "btn-cream",
+  /** Espresso: solid dark action on light imagery. */
   dark: "btn-dark",
+  /** Outline: low-emphasis action. */
+  outline: "btn-outline",
+  /** Text only. */
   ghost: "btn-ghost",
 } as const;
 
@@ -14,17 +21,19 @@ const sizes = {
   sm: "btn-sm",
   md: "btn-md",
   lg: "btn-lg",
+  /** Circular, icon only. Requires an aria-label. */
+  icon: "btn-icon",
 } as const;
 
 type ButtonStyleProps = {
   variant?: keyof typeof variants;
   size?: keyof typeof sizes;
-  /** "pill" forces fully rounded ends; "default" follows the theme radius. */
+  /** "pill" forces fully rounded ends; "default" uses the control radius. */
   shape?: "default" | "pill";
   fullWidth?: boolean;
 };
 
-function buttonClasses({ variant = "primary", size = "md", shape = "default", fullWidth }: ButtonStyleProps) {
+export function buttonClasses({ variant = "primary", size = "md", shape = "default", fullWidth }: ButtonStyleProps) {
   return cn("btn", variants[variant], sizes[size], shape === "pill" && "btn-pill", fullWidth && "w-full");
 }
 

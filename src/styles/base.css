@@ -14,13 +14,14 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  /* Headings use the soft display serif (Title Case is a content rule). */
   h1,
   h2,
   h3,
   h4 {
-    font-family: var(--font-serif);
-    font-weight: var(--heading-weight);
-    font-variation-settings: var(--heading-variation);
+    font-family: var(--font-display);
+    font-weight: var(--font-weight-heading);
+    font-variation-settings: "SOFT" 100, "WONK" 0;
     text-wrap: balance;
   }
 
@@ -34,12 +35,12 @@
   }
 
   ::selection {
-    background-color: var(--color-ink);
-    color: var(--color-paper);
+    background-color: var(--color-primary);
+    color: var(--color-primary-fg);
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-accent);
+    outline: 2px solid var(--color-primary);
     outline-offset: 3px;
   }
 

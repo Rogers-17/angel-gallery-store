@@ -21,7 +21,7 @@ export function PromoTiles({ tiles }: { tiles: PromoTile[] }) {
           <div className="group relative overflow-hidden rounded-card">
             <Media
               ratio="4/5"
-              tone={tile.tone}
+              surface={tile.tone}
               src={tile.image.src}
               alt={tile.image.alt}
               objectPosition={tile.image.position}
@@ -35,12 +35,12 @@ export function PromoTiles({ tiles }: { tiles: PromoTile[] }) {
               )}
             />
             {tile.display ? (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-5 p-6 text-center text-inverse">
-                <p className="font-serif text-h2 font-semibold tracking-wide">{tile.title}</p>
-                <ButtonLink href={tile.href} variant="inverse" size="sm">{tile.cta}</ButtonLink>
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-5 p-6 text-center text-cream">
+                <p className="font-display text-h2 font-heading tracking-wide">{tile.title}</p>
+                <ButtonLink href={tile.href} variant="cream" size="sm">{tile.cta}</ButtonLink>
               </div>
             ) : (
-              <div className="absolute inset-x-0 bottom-0 p-5 text-inverse md:p-6">
+              <div className="absolute inset-x-0 bottom-0 p-5 text-cream md:p-6">
                 <p className="max-w-xs text-body font-semibold">{tile.title}</p>
                 <ButtonLink href={tile.href} variant="dark" size="sm" className="mt-5">{tile.cta}</ButtonLink>
               </div>

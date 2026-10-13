@@ -1,42 +1,40 @@
-import { CtaBanner } from "@/components/design-b/cta-banner";
-import { ArrowLeftIcon, ArrowRightIcon } from "@/components/design-b/icons";
-import { Mosaic } from "@/components/design-b/mosaic";
-import { DesignBProductCard } from "@/components/design-b/product-card";
-import { PromoTiles } from "@/components/design-b/promo-tiles";
-import { ButtonLink } from "@/components/ui/button";
+import { CtaBanner } from "@/components/home/cta-banner";
+import { Mosaic } from "@/components/home/mosaic";
+import { PromoTiles } from "@/components/home/promo-tiles";
+import { ArrowLeftIcon, ArrowRightIcon } from "@/components/layout/icons";
+import { ProductCard } from "@/components/product/product-card";
+import { buttonClasses, ButtonLink } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
+import { ProductGrid } from "@/components/ui/grid";
 import { Heading, SectionHeader } from "@/components/ui/heading";
 import { Media } from "@/components/ui/media";
 import { Section } from "@/components/ui/section";
 import {
   banner,
-  type BProduct,
   formatPrice,
   hero,
   mosaic,
   newArrivals,
+  type Product,
   productHref,
   promoTiles,
   summerCollection,
 } from "./_data/catalog";
 
-const arrowButton =
-  "inline-flex size-11 items-center justify-center rounded-pill border border-inverse/50 text-inverse";
-
 function ProductSection({ id, title, subtitle, products }: {
   id: string;
   title: string;
   subtitle: string;
-  products: BProduct[];
+  products: Product[];
 }) {
   return (
     <Section id={id} spacing="sm" aria-labelledby={`${id}-title`}>
       <Container>
-        <SectionHeader id={`${id}-title`} title={title} subtitle={subtitle} align="center" className="mb-12" />
-        <ul className="grid grid-cols-2 gap-x-4 gap-y-12 lg:grid-cols-3 lg:gap-x-6">
+        <SectionHeader id={`${id}-title`} title={title} subtitle={subtitle} className="mb-12" />
+        <ProductGrid>
           {products.map((product) => (
             <li key={product.slug}>
-              <DesignBProductCard
+              <ProductCard
                 href={productHref(product.slug)}
                 name={product.name}
                 summary={product.summary}
@@ -44,14 +42,13 @@ function ProductSection({ id, title, subtitle, products }: {
                 price={formatPrice(product.price)}
                 compareAtPrice={product.compareAtPrice ? formatPrice(product.compareAtPrice) : undefined}
                 badge={product.badge}
-                tone={product.tone}
                 image={product.image}
               />
             </li>
           ))}
-        </ul>
+        </ProductGrid>
         <div className="mt-12 flex justify-center">
-          <ButtonLink href="#" variant="secondary" size="sm" shape="pill">
+          <ButtonLink href="#" variant="outline" size="sm" shape="pill">
             See More Collections
           </ButtonLink>
         </div>
@@ -60,34 +57,42 @@ function ProductSection({ id, title, subtitle, products }: {
   );
 }
 
-export default function DesignBHome() {
+export default function Home() {
   return (
     <main className="flex-1">
       {/* Hero: the transparent header floats over it. */}
       <section className="relative">
-        {/* Mirrored so the model sits right and the headline left, as in the reference. */}
+        {/* Mirrored so the model sits right and the headline left. */}
         <div className="-scale-x-100">
-          <Media ratio="4/5" tone="clay" src={hero.image.src} alt={hero.image.alt} objectPosition={hero.image.position} priority className="sm:aspect-video lg:aspect-16/7" />
+          <Media
+            ratio="4/5"
+            surface="clay"
+            radius="none"
+            src={hero.image.src}
+            alt={hero.image.alt}
+            objectPosition={hero.image.position}
+            priority
+            className="sm:aspect-video lg:aspect-16/7"
+          />
         </div>
         <div className="absolute inset-0 bg-linear-to-r from-ink/80 via-ink/40 to-ink/5" />
         <div className="absolute inset-0 bg-primary/15 mix-blend-multiply" />
-        <Container className="absolute inset-0 flex flex-col justify-center pt-header text-inverse">
+        <Container className="absolute inset-0 flex flex-col justify-center pt-header text-cream">
           <Heading as="h1" size="display" className="max-w-2xl">
             {hero.title}
           </Heading>
-          <p className="mt-5 max-w-md text-body text-inverse/80 md:text-body-lg">{hero.text}</p>
-          <ButtonLink href="#new-arrivals" variant="inverse" size="sm" className="mt-8 self-start">
+          <p className="mt-5 max-w-md text-body text-cream/80 md:text-body-lg">{hero.text}</p>
+          <ButtonLink href="#new-arrivals" variant="cream" size="md" className="mt-8 self-start">
             Shop Now
           </ButtonLink>
         </Container>
         {/* Decorative carousel controls (no slider yet). */}
         <div aria-hidden className="absolute right-gutter bottom-6 flex gap-2 md:bottom-10">
-          <span className={arrowButton}><ArrowLeftIcon /></span>
-          <span className={`${arrowButton} border-inverse bg-inverse text-ink`}><ArrowRightIcon /></span>
+          <span className={buttonClasses({ variant: "dark", size: "icon" })}><ArrowLeftIcon /></span>
+          <span className={buttonClasses({ variant: "dark", size: "icon" })}><ArrowRightIcon /></span>
         </div>
       </section>
 
-      {/* Promo tiles */}
       <Section spacing="sm" aria-label="Featured categories">
         <Container>
           <PromoTiles tiles={promoTiles} />
@@ -101,14 +106,12 @@ export default function DesignBHome() {
         products={newArrivals}
       />
 
-      {/* Mosaic */}
       <Section id="recommended" spacing="sm" aria-labelledby="recommended-title">
         <Container>
           <SectionHeader
             id="recommended-title"
             title="Most Recommended Collections For You"
             subtitle="The edits our customers come back to, from everyday footwear to the bag that goes everywhere."
-            align="center"
             className="mb-12"
           />
           <Mosaic {...mosaic} />
@@ -122,7 +125,6 @@ export default function DesignBHome() {
         products={summerCollection}
       />
 
-      {/* CTA banner */}
       <Section aria-labelledby="banner-title">
         <Container>
           <CtaBanner id="banner-title" {...banner} />

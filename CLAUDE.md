@@ -50,7 +50,7 @@ Use:
 - Tailwind CSS v4 (CSS-first config imported from `src/app/globals.css`; compiled by `@tailwindcss/postcss` via `postcss.config.mjs`)
 - Drizzle ORM + drizzle-kit
 - PostgreSQL via Neon (`@neondatabase/serverless`, HTTP driver)
-- Fonts self-hosted via `next/font/local`: Geist from the `geist` package, Newsreader from `@fontsource-variable/newsreader`, Fraunces (design B) from `@fontsource-variable/fraunces` (do not use `next/font/google`; Google Fonts is unreliable on this network)
+- Fonts self-hosted via `next/font/local`: Geist from the `geist` package, Fraunces from `@fontsource-variable/fraunces` (do not use `next/font/google`; Google Fonts is unreliable on this network)
 
 `next.config.ts` enables `cacheComponents` and `partialPrefetching`. Route handlers and pages that query the database must run at request time (`await connection()` from `next/server`) or cache explicitly with `use cache`.
 
@@ -58,28 +58,27 @@ Not built yet — do not add unless explicitly requested: e-commerce features, a
 
 # Design system
 
-Premium, editorial, near-monochrome. Full rationale in `prompts/design-system.md`; live preview at `/design-system`.
+Warm, bold storefront (the client-approved "design B"): white canvas, espresso ink, caramel and beige actions, cream on photos, rounded cards. Rationale: `prompts/global-design-system.md` (local); live reference: `/design-system`. Reference screenshot `references/design-b.webp` is local only and its branding (Converse, Nike, Puma, Adidas) must never appear.
 
-- Tokens live in `src/styles/theme.css` (Tailwind `@theme`): colors (`paper`, `surface`, `ink`, `muted`, `line`, `accent`, …), fonts (`font-serif` Newsreader for headings, `font-sans` Geist for UI/body), type scale (`text-display`, `text-h1`–`text-h4`, `text-body-lg`, `text-body`, `text-small`, `text-label`), spacing (`gutter`, `section`, `section-sm`, `header`), containers (`page` 1440px, `narrow` 720px).
-- Primitives live in `src/styles/components.css` (`@utility`) and `src/components/ui/`: `Container`, `Section`, `Heading`/`Eyebrow`, `Button`/`ButtonLink`, `TextLink`, `Media`, `ProductGrid`. Use them instead of re-styling elements.
-- Base styles (body, headings, focus ring, reduced motion) live in `src/styles/base.css`. `src/app/globals.css` only imports these files.
-- Rules: no hard-coded hex values or arbitrary font sizes in components — use tokens. Square corners (no radius) and no shadows; use hairline borders (`hairline border-*`) and whitespace for hierarchy. Uppercase tracked labels via `eyebrow`. Product images are 4:5. Product grids are 2 / 3 / 4 columns (mobile / md / lg). Keep visible focus rings.
+- **Tokens** (`src/styles/theme.css`, Tailwind `@theme`):
+  - Colors: `paper`, `ink`, `ink-soft`, `muted`, `primary` (caramel) / `primary-hover` / `primary-fg`, `secondary` (beige), `cream`, `tag` / `tag-fg`, `surface`, `well-from`/`well-to`, `espresso-soft`, `line`, `line-strong`, `tone-*` (image placeholders).
+  - Fonts: `font-display` (Fraunces, weight `font-heading` 650, SOFT axis) and `font-sans` (Geist).
+  - Type: `text-display`, `text-h1`–`text-h4`, `text-price`, `text-body-lg`, `text-body`, `text-small`, `text-caption`, `text-label`.
+  - Spacing: `gutter`, `section`, `section-sm`, `header`. Containers: `page` (1280px), `narrow` (720px).
+  - Radius: `rounded-card` (14px), `rounded-control` (8px), `rounded-pill`.
+- **Utilities** (`src/styles/components.css`): `container-page`, `container-narrow`, `section-y`, `section-y-sm`, `hairline`, `well`, `tag`, `link-underline`, `link-inline`, `btn` + `btn-primary|secondary|cream|dark|outline|ghost` + `btn-sm|md|lg|icon` + `btn-pill`, `field`, `field-dark`, `tone-*`, `scrollbar-none`.
+- **Components** (`src/components/ui/`): `Container`, `Section`, `Heading`, `SectionHeader` (centred by default), `Button`/`ButtonLink` (+ `buttonClasses`), `TextLink`, `Tag`, `Media` (`surface` tone or `"well"`, `radius`), `ProductGrid` (2 → 3 columns). Use these instead of re-styling elements.
+- **Rules**:
+  - No hex values, arbitrary font sizes or shadows in components; use tokens (product colour-swatch data is the only exception).
+  - Headings use the display serif in Title Case; section titles are centred with a short muted subtitle. Serif also for "voice" labels (footer headings, newsletter label, social pills). UI copy is sans, sentence case.
+  - Buttons are sentence case: `primary` for the main action, `secondary` beside it, `cream` on photos/dark, `dark` on light imagery, `outline` pill for "see more".
+  - Product cards lead with the price, then tag pill, name, two-line caption summary, then Add to Cart + Buy Now. Product images sit on a `well`.
+  - Text on photos is cream over a dark gradient. Dark surfaces use `ink` with `espresso-soft` filled controls.
+  - Mobile: grids stay 2 columns with stacked buttons, promo rows swipe, mosaics stack, no horizontal scroll at 360px. Keep visible focus rings.
 - Fonts are self-hosted (`src/app/fonts.ts`). Never use `next/font/google`.
-- Components use semantic tokens (`primary`, `secondary`, `rounded-card`, `rounded-control`, `--button-*`, `--heading-*`) so a scoped theme (design B) can restyle them; Editorial values reproduce the original look.
-- The design A shell (announcement bar, header, footer) lives in `src/app/(editorial)/layout.tsx`; the root layout only sets fonts, `<html>` and `<body>`.
-- `src/app/_demo/catalog.ts` is temporary demo data for the homepage; replace with Drizzle queries when products exist.
-- Demo photos (Unsplash, credited in `public/images/demo/CREDITS.md`) live in `public/images/demo/` and are self-hosted. Render images through `Media` (`src`/`alt`/`sizes`), which uses `next/image`; without `src` it shows a tonal placeholder. Never hot-link external image hosts.
-
-# Design B review page
-
-A second design (bold serif, white canvas, caramel buttons, rounded cards), modelled on a client reference screenshot, lives at `/design-b` while the client compares it with the homepage (design A). Prompt: `prompts/design-b-page.md`; reference: `references/design-b.webp` (not committed).
-
-- Routes: `src/app/design-b/` (`layout.tsx` shell, `page.tsx`, `products/[slug]/page.tsx` product details, prerendered with `generateStaticParams`; unknown slugs call `notFound()`).
-- Tokens: `src/styles/design-b.css` overrides tokens only inside the `.design-b` wrapper. Never change design A to fit B.
-- Components: `src/components/design-b/` (header, footer, product card, promo tiles, mosaic, CTA banner, icons, `pdp/*`).
-- Data: `src/app/design-b/_data/catalog.ts`, separate from design A's `src/app/_demo/catalog.ts`. Images: `public/images/design-b/` (Unsplash, credited in `CREDITS.md`). Do not share data or images between the two designs.
-- Reference branding (Converse, Nike, Puma, Adidas) must never appear; use Angel Gallery branding and logo-free photos.
-- Cart, wishlist, newsletter and the hero arrows are visual only until those features are built.
+- The store shell (header, footer) is in the root layout. The header is transparent over the homepage hero and solid elsewhere (`header-frame.tsx`).
+- `src/app/_data/catalog.ts` is temporary demo data; replace with Drizzle queries when products exist. Demo photos (Unsplash, credited in `public/images/demo/CREDITS.md`) are self-hosted; render images through `Media` (`next/image`). Never hot-link external image hosts.
+- Cart, wishlist, newsletter and hero arrows are visual only until those features are built. `/design-b` URLs redirect to `/` (`next.config.ts`).
 
 # Neon Postgres source of truth
 
@@ -93,16 +92,15 @@ Neon Postgres is the source of truth for app data. All database access goes thro
 # Project structure
 
 ```
-src/app/               Routes (App Router)
-src/app/(editorial)/   Design A: homepage + /design-system (route group, own layout)
-src/app/design-b/      Design B review page + product details pages
+src/app/               Routes (App Router): / (home), /products/[slug], /design-system
+src/app/_data/         Temporary demo catalog
 src/app/api/health/    GET — database connectivity check
 src/app/fonts.ts       Font definitions (all self-hosted)
-src/styles/            theme.css (tokens), base.css, components.css (primitives), design-b.css (scoped)
+src/styles/            theme.css (tokens), base.css, components.css (primitives)
 src/components/ui/     Reusable design primitives
-src/components/layout/ Announcement bar, header, mobile menu, footer
-src/components/product/ Product UI (ProductCard)
-src/components/design-b/ Design B components
+src/components/layout/ Header, header frame, mobile menu, footer, icons, nav data
+src/components/product/ Product card + product details (pdp/*)
+src/components/home/   Homepage sections (promo tiles, mosaic, CTA banner)
 src/db/index.ts        Drizzle client (server-only, lazy)
 src/db/schema.ts       Drizzle table definitions
 src/lib/env.ts         Server-only env access (throws on missing vars)

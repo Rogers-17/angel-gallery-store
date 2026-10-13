@@ -15,24 +15,21 @@ type HeadingProps = ComponentProps<"h2"> & {
   size?: keyof typeof sizes;
 };
 
+/** Display-serif heading. Use Title Case for headings. */
 export function Heading({ as: Tag = "h2", size, className, ...props }: HeadingProps) {
-  return <Tag className={cn("font-serif", sizes[size ?? Tag], className)} {...props} />;
-}
-
-export function Eyebrow({ className, ...props }: ComponentProps<"p">) {
-  return <p className={cn("eyebrow text-muted", className)} {...props} />;
+  return <Tag className={cn("font-display", sizes[size ?? Tag], className)} {...props} />;
 }
 
 type SectionHeaderProps = {
   id?: string;
   title: string;
   subtitle?: string;
-  align?: "start" | "center";
+  align?: "center" | "start";
   className?: string;
 };
 
-/** Section title with an optional muted subtitle. */
-export function SectionHeader({ id, title, subtitle, align = "start", className }: SectionHeaderProps) {
+/** Section title with a short muted subtitle. Centred by default. */
+export function SectionHeader({ id, title, subtitle, align = "center", className }: SectionHeaderProps) {
   return (
     <div className={cn(align === "center" && "mx-auto max-w-xl text-center", className)}>
       <Heading id={id} size="h2">{title}</Heading>

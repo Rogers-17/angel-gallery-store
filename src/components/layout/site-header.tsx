@@ -1,42 +1,46 @@
 import Link from "next/link";
+import { HeaderFrame } from "./header-frame";
+import { BagIcon, HeartIcon, Monogram, SearchIcon, UserIcon } from "./icons";
 import { MobileMenu } from "./mobile-menu";
 import { primaryNav } from "./nav";
 
+const iconLink =
+  "inline-flex size-10 items-center justify-center rounded-pill transition-colors hover:bg-current/10";
+
 export function SiteHeader() {
   return (
-    <header className="hairline sticky top-0 z-40 border-b bg-paper/95 backdrop-blur-sm">
-      <div className="container-page grid h-header grid-cols-[1fr_auto_1fr] items-center gap-4">
-        <div className="flex items-center">
+    <HeaderFrame>
+      <div className="container-page flex h-header items-center justify-between gap-6">
+        <div className="flex items-center gap-2">
           <MobileMenu links={primaryNav} />
-          <nav aria-label="Primary" className="hidden lg:block">
-            <ul className="flex items-center gap-8">
-              {primaryNav.map((link) => (
-                <li key={link.label}>
-                  <Link href={link.href} className="eyebrow link-underline">
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
+          <Link href="/" className="flex items-center gap-2.5 font-display text-h4 font-heading whitespace-nowrap">
+            <Monogram />
+            <span className="hidden sm:inline">Angel Gallery</span>
+          </Link>
         </div>
 
-        <Link href="/" className="font-serif text-h4 whitespace-nowrap sm:text-h3">
-          Angel Gallery
-        </Link>
+        <nav aria-label="Primary" className="hidden lg:block">
+          <ul className="flex items-center gap-8 text-small font-medium">
+            {primaryNav.map((link) => (
+              <li key={link.label}>
+                <Link href={link.href} className="link-underline">{link.label}</Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
 
-        <div className="flex items-center justify-end gap-6">
-          <Link href="#" className="eyebrow link-underline hidden md:inline">
-            Search
-          </Link>
-          <Link href="#" className="eyebrow link-underline hidden md:inline">
-            Account
-          </Link>
-          <Link href="#" className="eyebrow link-underline">
-            Bag (0)
+        <div className="flex items-center gap-1">
+          <Link href="#" aria-label="Search" className={iconLink}><SearchIcon /></Link>
+          <Link href="#" aria-label="Account" className={`${iconLink} max-md:hidden`}><UserIcon /></Link>
+          <Link href="#" aria-label="Wishlist" className={`${iconLink} max-md:hidden`}><HeartIcon /></Link>
+          <Link href="#" aria-label="Bag, 0 items" className={`${iconLink} relative`}>
+            <BagIcon />
+            <span className="absolute top-1 right-1 flex size-4 items-center justify-center rounded-pill bg-primary text-label leading-none text-primary-fg">
+              0
+            </span>
           </Link>
         </div>
       </div>
-    </header>
+    </HeaderFrame>
   );
 }

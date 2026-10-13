@@ -1,34 +1,41 @@
 /*
- * Design tokens. Every color, font, size and width used by the UI comes from here.
- * Tailwind turns each token into utilities, e.g. --color-ink -> text-ink / bg-ink,
- * --text-h2 -> text-h2, --spacing-gutter -> px-gutter, --container-page -> max-w-page.
+ * Design tokens for Angel Gallery Store. Every color, font, size, radius and width used by the UI
+ * comes from here. Tailwind turns each token into utilities, e.g. --color-primary -> bg-primary,
+ * --text-h2 -> text-h2, --spacing-gutter -> px-gutter, --radius-card -> rounded-card.
  */
 @theme {
-  /* Color: warm, near-monochrome. Imagery carries color; accent is used sparingly. */
-  --color-paper: #f7f5f1;
-  --color-surface: #efebe4;
-  --color-surface-strong: #e4ded4;
-  --color-ink: #1a1917;
-  --color-ink-soft: #3a3834;
-  --color-muted: #6e6a63;
-  --color-line: #e2ddd4;
-  --color-line-strong: #c9c2b6;
-  --color-accent: #7a2e26;
-  --color-success: #2f5d46;
-  --color-danger: #a1312a;
+  /* Canvas & ink: white canvas, warm espresso text. */
+  --color-paper: #ffffff;
+  --color-ink: #241c15;
+  --color-ink-soft: #4a3f35;
+  --color-muted: #776d64;
   --color-inverse: #ffffff;
 
-  /* Semantic roles (themes override these; values here are the Editorial theme). */
-  --color-primary: var(--color-ink);
-  --color-primary-hover: var(--color-ink-soft);
-  --color-primary-fg: var(--color-paper);
-  --color-secondary: transparent;
-  --color-secondary-border: var(--color-ink);
-  --color-secondary-fg: var(--color-ink);
-  --color-secondary-hover: var(--color-ink);
-  --color-secondary-hover-fg: var(--color-paper);
+  /* Surfaces */
+  --color-surface: #f4f2ef; /* quiet panels, chips */
+  --color-surface-strong: #e9e4dd;
+  --color-well-from: #f7f7f6; /* product image wells (top) */
+  --color-well-to: #ecebe8; /* product image wells (bottom) */
+  --color-espresso-soft: #3a2e24; /* filled controls on dark surfaces */
 
-  /* Placeholder image tones (replaced by real photography later). */
+  /* Brand */
+  --color-primary: #7b5838; /* caramel: primary actions, sale prices */
+  --color-primary-hover: #664729;
+  --color-primary-fg: #ffffff;
+  --color-secondary: #efe6da; /* beige: secondary actions */
+  --color-secondary-hover: #e4d7c6;
+  --color-cream: #f3e9dc; /* headings and light buttons on photos / dark */
+  --color-cream-hover: #eadcc9;
+  --color-tag: #efe3d3;
+  --color-tag-fg: #7b5838;
+
+  /* Lines & status */
+  --color-line: #ece7e1;
+  --color-line-strong: #d9d1c7;
+  --color-success: #2f5d46;
+  --color-danger: #a1312a;
+
+  /* Placeholder image tones (shown while photos load or when none exist). */
   --color-tone-sand: #d9cfc0;
   --color-tone-stone: #bfb8ad;
   --color-tone-clay: #c4a58e;
@@ -36,19 +43,19 @@
   --color-tone-mist: #c9ccc9;
   --color-tone-umber: #5b4a3d;
 
-  /* Fonts: serif for editorial display, sans for UI and body. */
+  /* Fonts: heavy soft serif for headings and "voice" labels, neutral sans for UI. */
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-serif: var(--font-newsreader), ui-serif, Georgia, serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
-  /* Type scale: fluid display sizes, fixed UI sizes. */
-  --text-display: clamp(2.75rem, 1.6rem + 4.8vw, 5.5rem);
+  /* Type scale: fluid headings, fixed UI sizes. */
+  --text-display: clamp(2.75rem, 1.5rem + 5vw, 5.75rem);
   --text-display--line-height: 1.02;
-  --text-display--letter-spacing: -0.02em;
-  --text-h1: clamp(2.25rem, 1.6rem + 2.8vw, 3.75rem);
+  --text-display--letter-spacing: -0.025em;
+  --text-h1: clamp(2.25rem, 1.6rem + 2.6vw, 3.75rem);
   --text-h1--line-height: 1.05;
   --text-h1--letter-spacing: -0.02em;
-  --text-h2: clamp(1.75rem, 1.4rem + 1.5vw, 2.5rem);
+  --text-h2: clamp(1.75rem, 1.4rem + 1.4vw, 2.5rem);
   --text-h2--line-height: 1.1;
   --text-h2--letter-spacing: -0.015em;
   --text-h3: clamp(1.375rem, 1.2rem + 0.75vw, 1.75rem);
@@ -56,36 +63,37 @@
   --text-h3--letter-spacing: -0.01em;
   --text-h4: clamp(1.125rem, 1.05rem + 0.3vw, 1.25rem);
   --text-h4--line-height: 1.3;
-  --text-body-lg: 1.125rem;
+  --text-price: clamp(1.25rem, 1.15rem + 0.4vw, 1.5rem);
+  --text-price--line-height: 1.2;
+  --text-body-lg: 1.0625rem;
   --text-body-lg--line-height: 1.6;
   --text-body: 0.9375rem;
   --text-body--line-height: 1.6;
   --text-small: 0.8125rem;
   --text-small--line-height: 1.5;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1.45;
   --text-label: 0.6875rem;
   --text-label--line-height: 1.2;
-  --text-label--letter-spacing: 0.14em;
-  /* Oversized decorative marks (e.g. footer monogram). */
+  /* Oversized decorative marks (footer monogram). */
   --text-watermark: clamp(16rem, 8rem + 22vw, 26rem);
   --text-watermark--line-height: 1;
 
-  --tracking-label: 0.14em;
-  --tracking-tight: -0.02em;
+  --font-weight-heading: 650; /* utility: font-heading */
 
   /* Spacing: Tailwind's 4px scale plus semantic layout spacing. */
   --spacing-gutter: clamp(1rem, 4vw - 0.4rem, 3rem);
-  --spacing-section: clamp(4rem, 2.5rem + 6vw, 9rem);
+  --spacing-section: clamp(4rem, 2.5rem + 5vw, 8rem);
   --spacing-section-sm: clamp(2.5rem, 1.75rem + 3vw, 5rem);
-  --spacing-header: 4rem;
+  --spacing-header: 4.5rem;
 
   /* Containers */
-  --container-page: 90rem;
+  --container-page: 80rem;
   --container-narrow: 45rem;
 
-  /* Radius: square by default; pill only for small badges. */
-  --radius-none: 0;
-  --radius-card: 0;
-  --radius-control: 0;
+  /* Radius: rounded cards, softer controls, full pills. No shadows in this system. */
+  --radius-card: 14px;
+  --radius-control: 8px;
   --radius-pill: 999px;
 
   --breakpoint-3xl: 105rem;
@@ -94,14 +102,4 @@
   --ease-out-soft: cubic-bezier(0.2, 0.7, 0.2, 1);
   --duration-fast: 200ms;
   --duration-slow: 400ms;
-}
-
-/* Theme-level settings that are not Tailwind utilities. */
-:root {
-  --heading-weight: 400;
-  --heading-variation: normal;
-  --button-case: uppercase;
-  --button-tracking: var(--tracking-label);
-  --button-size: var(--text-label);
-  --button-weight: 500;
 }

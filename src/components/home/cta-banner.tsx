@@ -17,7 +17,7 @@ export function CtaBanner({ id, title, cta, href, tone, image }: CtaBannerProps)
     <div className="relative overflow-hidden rounded-card">
       <Media
         ratio="4/5"
-        tone={tone}
+        surface={tone}
         src={image.src}
         alt={image.alt}
         objectPosition={image.position}
@@ -25,9 +25,9 @@ export function CtaBanner({ id, title, cta, href, tone, image }: CtaBannerProps)
         className="sm:aspect-video lg:aspect-21/9"
       />
       <div className="absolute inset-0 bg-ink/55" />
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-8 px-6 text-center text-inverse">
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-8 px-6 text-center text-cream">
         <Heading id={id} size="h1" className="max-w-3xl">{title}</Heading>
-        <ButtonLink href={href} variant="inverse" size="md" shape="pill">
+        <ButtonLink href={href} variant="cream" size="md" shape="pill">
           {cta}
         </ButtonLink>
       </div>

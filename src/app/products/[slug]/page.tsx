@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { HeartIcon } from "@/components/design-b/icons";
-import { Breadcrumb } from "@/components/design-b/pdp/breadcrumb";
-import { DetailsAccordion } from "@/components/design-b/pdp/details-accordion";
-import { ColorPicker, SizePicker } from "@/components/design-b/pdp/option-picker";
-import { ProductGallery } from "@/components/design-b/pdp/product-gallery";
-import { Quantity } from "@/components/design-b/pdp/quantity";
-import { DesignBProductCard } from "@/components/design-b/product-card";
+import { HeartIcon } from "@/components/layout/icons";
+import { Breadcrumb } from "@/components/product/pdp/breadcrumb";
+import { DetailsAccordion } from "@/components/product/pdp/details-accordion";
+import { ColorPicker, SizePicker } from "@/components/product/pdp/option-picker";
+import { ProductGallery } from "@/components/product/pdp/product-gallery";
+import { Quantity } from "@/components/product/pdp/quantity";
+import { ProductCard } from "@/components/product/product-card";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
+import { ProductGrid } from "@/components/ui/grid";
 import { Heading, SectionHeader } from "@/components/ui/heading";
-import { toneClass } from "@/components/ui/media";
 import { Section } from "@/components/ui/section";
+import { Tag } from "@/components/ui/tag";
 import {
   formatPrice,
   getProduct,
@@ -42,14 +43,14 @@ export default async function ProductPage({ params }: PageProps) {
   if (!product) notFound();
 
   const related = getRelatedProducts(product);
-  const sectionHref = product.collection === "summer" ? "/design-b#summer" : "/design-b#new-arrivals";
+  const sectionHref = product.collection === "summer" ? "/#summer" : "/#new-arrivals";
 
   return (
     <main className="flex-1">
       <Container className="pt-8 pb-section-sm">
         <Breadcrumb
           items={[
-            { label: "Home", href: "/design-b" },
+            { label: "Home", href: "/" },
             { label: product.department, href: sectionHref },
             { label: product.name },
           ]}
@@ -60,22 +61,19 @@ export default async function ProductPage({ params }: PageProps) {
             src={product.image.src}
             alt={product.image.alt}
             position={product.image.position}
-            toneClass={toneClass(product.tone)}
           />
 
           <div className="flex flex-col gap-8">
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-pill bg-surface px-3 py-1 text-small text-ink-soft">{product.tag}</span>
-                {product.badge && (
-                  <span className="rounded-pill bg-secondary px-3 py-1 text-small text-secondary-fg">{product.badge}</span>
-                )}
+                <Tag>{product.tag}</Tag>
+                {product.badge && <Tag>{product.badge}</Tag>}
               </div>
               <Heading as="h1" size="h1" className="mt-4">{product.name}</Heading>
-              <p className="mt-4 text-h3 font-semibold tabular-nums">
+              <p className="mt-4 text-price font-semibold tabular-nums">
                 {product.compareAtPrice ? (
                   <>
-                    <span className="text-accent">{formatPrice(product.price)}</span>{" "}
+                    <span className="text-primary">{formatPrice(product.price)}</span>{" "}
                     <s className="text-body font-normal text-muted">{formatPrice(product.compareAtPrice)}</s>
                   </>
                 ) : (
@@ -148,10 +146,10 @@ export default async function ProductPage({ params }: PageProps) {
             align="center"
             className="mb-12"
           />
-          <ul className="grid grid-cols-2 gap-x-4 gap-y-12 lg:grid-cols-3 lg:gap-x-6">
+          <ProductGrid>
             {related.map((item) => (
               <li key={item.slug}>
-                <DesignBProductCard
+                <ProductCard
                   href={productHref(item.slug)}
                   name={item.name}
                   summary={item.summary}
@@ -159,12 +157,11 @@ export default async function ProductPage({ params }: PageProps) {
                   price={formatPrice(item.price)}
                   compareAtPrice={item.compareAtPrice ? formatPrice(item.compareAtPrice) : undefined}
                   badge={item.badge}
-                  tone={item.tone}
                   image={item.image}
                 />
               </li>
             ))}
-          </ul>
+          </ProductGrid>
         </Container>
       </Section>
     </main>

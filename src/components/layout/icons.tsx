@@ -46,17 +46,21 @@ export const ArrowRightIcon = (props: IconProps) => (
   <Icon {...props}><path d="M5 12h14m-6-6 6 6-6 6" /></Icon>
 );
 
+export const MailIcon = (props: IconProps) => (
+  <Icon {...props}><rect x="3.5" y="5.5" width="17" height="13" rx="2" /><path d="m4 7 8 6 8-6" /></Icon>
+);
+
 export const ArrowUpRightIcon = (props: IconProps) => (
   <Icon {...props}><path d="M7 17 17 7M9 7h8v8" /></Icon>
 );
 
-/** "AG" monogram used as the Bold theme logo mark (original, not from the reference). */
+/** "AG" monogram: the Angel Gallery logo mark. */
 export function Monogram({ className }: { className?: string }) {
   return (
     <span
       aria-hidden
       className={cn(
-        "inline-flex size-8 items-center justify-center rounded-pill border border-current font-serif text-small font-semibold",
+        "inline-flex size-8 items-center justify-center rounded-pill border border-current font-display text-small font-heading",
         className,
       )}
     >

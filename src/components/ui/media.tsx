@@ -20,25 +20,28 @@ const tones = {
   umber: "tone-umber",
 } as const;
 
+const radii = {
+  none: "",
+  card: "rounded-card",
+  control: "rounded-control",
+} as const;
+
 export type MediaRatio = keyof typeof ratios;
 export type MediaTone = keyof typeof tones;
 
-/** Tone background utility class, for image frames built outside `Media`. */
-export function toneClass(tone: MediaTone): string {
-  return tones[tone];
-}
-
 type MediaProps = {
   ratio?: MediaRatio;
-  /** Background tone: the placeholder when there is no image, the loading color when there is. */
-  tone?: MediaTone;
-  /** Placeholder only: second tone revealed when a parent `group` is hovered. */
-  hoverTone?: MediaTone;
+  /**
+   * Background behind the image: a tone (also the placeholder when there is no image)
+   * or "well", the soft gradient used behind product shots.
+   */
+  surface?: MediaTone | "well";
+  radius?: keyof typeof radii;
   /** Image path; omit to render a tonal placeholder. */
   src?: string;
   /** Alt text for the image; omit (or "") for decorative media. */
   alt?: string;
-  /** `next/image` sizes hint, e.g. "(min-width: 1024px) 25vw, 50vw". */
+  /** `next/image` sizes hint, e.g. "(min-width: 1024px) 33vw, 50vw". */
   sizes?: string;
   /** Load eagerly (above-the-fold images such as the hero). */
   priority?: boolean;
@@ -50,11 +53,11 @@ type MediaProps = {
   children?: ReactNode;
 };
 
-/** Fixed-ratio image frame. Renders a tonal placeholder when no image is given. */
+/** Fixed-ratio image frame with a rounded, toned background. */
 export function Media({
   ratio = "4/5",
-  tone = "sand",
-  hoverTone,
+  surface = "sand",
+  radius = "card",
   src,
   alt = "",
   sizes = "100vw",
@@ -70,9 +73,15 @@ export function Media({
     <div
       role={!src && alt ? "img" : undefined}
       aria-label={!src && alt ? alt : undefined}
-      className={cn("relative overflow-hidden", tones[tone], ratios[ratio], className)}
+      className={cn(
+        "relative overflow-hidden",
+        surface === "well" ? "well" : tones[surface],
+        radii[radius],
+        ratios[ratio],
+        className,
+      )}
     >
-      {src ? (
+      {src && (
         <Image
           src={src}
           alt={alt}
@@ -81,16 +90,6 @@ export function Media({
           priority={priority}
           className={cn("object-cover", objectPosition, zoomOnHover && zoom)}
         />
-      ) : (
-        hoverTone && (
-          <div
-            aria-hidden
-            className={cn(
-              "absolute inset-0 opacity-0 transition-opacity duration-500 ease-out-soft group-hover:opacity-100",
-              tones[hoverTone],
-            )}
-          />
-        )
       )}
       {children}
     </div>

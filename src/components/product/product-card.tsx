@@ -1,65 +1,67 @@
 import Link from "next/link";
-import { Media, type MediaTone } from "@/components/ui/media";
-import { cn } from "@/lib/cn";
+import { Button, ButtonLink } from "@/components/ui/button";
+import { Media } from "@/components/ui/media";
+import { Tag } from "@/components/ui/tag";
 
 export type ProductCardProps = {
   href: string;
   name: string;
-  detail?: string;
+  summary: string;
+  tag: string;
   price: string;
   compareAtPrice?: string;
   badge?: string;
-  tone: MediaTone;
-  hoverTone?: MediaTone;
-  image?: { src: string; alt: string; position?: string };
-  soldOut?: boolean;
+  image: { src: string; alt: string; position?: string };
 };
 
-export function ProductCard({
-  href,
-  name,
-  detail,
-  price,
-  compareAtPrice,
-  badge,
-  tone,
-  hoverTone,
-  image,
-  soldOut,
-}: ProductCardProps) {
+/**
+ * Price-first product card: image on a gradient well, price + tag pill, name, two-line summary,
+ * then "Add to Cart" (secondary) and "Buy Now" (primary). Add to Cart is visual only for now.
+ */
+export function ProductCard({ href, name, summary, tag, price, compareAtPrice, badge, image }: ProductCardProps) {
   return (
-    <Link href={href} className="group block">
-      <Media
-        ratio="4/5"
-        tone={tone}
-        hoverTone={hoverTone}
-        src={image?.src}
-        alt={image?.alt}
-        objectPosition={image?.position}
-        sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
-        zoomOnHover
-        className={cn(soldOut && "opacity-60")}
-      >
-        {badge && (
-          <span className="eyebrow absolute top-3 left-3 bg-paper px-2 py-1 text-ink">{badge}</span>
-        )}
-      </Media>
-      <div className="mt-3 flex flex-col gap-0.5 text-small sm:flex-row sm:justify-between sm:gap-4">
-        <div>
-          <h3 className="font-sans group-hover:underline group-hover:underline-offset-4">{name}</h3>
-          {detail && <p className="text-muted">{detail}</p>}
-        </div>
-        <p className="shrink-0 tabular-nums">
+    <article className="flex h-full flex-col">
+      <Link href={href} className="group block" tabIndex={-1} aria-hidden>
+        <Media
+          ratio="1/1"
+          surface="well"
+          src={image.src}
+          alt=""
+          objectPosition={image.position}
+          sizes="(min-width: 1024px) 33vw, 50vw"
+          zoomOnHover
+        >
+          {badge && (
+            <span className="absolute top-3 left-3 rounded-pill bg-paper px-3 py-1 text-caption font-medium text-ink">
+              {badge}
+            </span>
+          )}
+        </Media>
+      </Link>
+
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <p className="text-price font-semibold tabular-nums">
           {compareAtPrice ? (
             <>
-              <span className="text-accent">{price}</span>{" "}
-              <s className="text-muted">{compareAtPrice}</s>
+              <span className="text-primary">{price}</span>{" "}
+              <s className="text-small font-normal text-muted">{compareAtPrice}</s>
             </>
           ) : (
             price
           )}
         </p>
+        <Tag>{tag}</Tag>
       </div>
-    </Link>
+
+      <h3 className="mt-2 font-sans text-body font-medium">
+        <Link href={href} className="hover:underline hover:underline-offset-4">{name}</Link>
+      </h3>
+      <p className="mt-1 line-clamp-2 text-caption text-muted">{summary}</p>
+
+      <div className="mt-auto grid gap-2 pt-4 sm:grid-cols-2">
+        <Button variant="secondary" size="sm">Add to Cart</Button>
+        <ButtonLink href={href} variant="primary" size="sm">Buy Now</ButtonLink>
+      </div>
+    </article>
   );
 }

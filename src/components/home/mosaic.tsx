@@ -1,7 +1,7 @@
 import { ButtonLink } from "@/components/ui/button";
 import { Media, type MediaTone } from "@/components/ui/media";
 import { cn } from "@/lib/cn";
-import { ArrowUpRightIcon } from "./icons";
+import { ArrowUpRightIcon } from "@/components/layout/icons";
 
 export type MosaicItem = {
   label: string;
@@ -21,7 +21,7 @@ function MosaicCard({ item, className, mediaClassName, sizes }: {
     <div className={cn("group relative overflow-hidden rounded-card", className)}>
       <Media
         ratio="4/5"
-        tone={item.tone}
+        surface={item.tone}
         src={item.image.src}
         alt={item.image.alt}
         objectPosition={item.image.position}
@@ -30,9 +30,9 @@ function MosaicCard({ item, className, mediaClassName, sizes }: {
         className={mediaClassName}
       />
       <div className="absolute inset-0 bg-linear-to-t from-ink/60 via-transparent to-transparent" />
-      <div className="absolute inset-x-0 bottom-0 flex flex-col items-start gap-4 p-5 text-inverse md:p-7">
-        <p className="font-serif text-h2 font-light">{item.label}</p>
-        <ButtonLink href={item.href} variant="inverse" size="sm" shape="pill">
+      <div className="absolute inset-x-0 bottom-0 flex flex-col items-start gap-4 p-5 text-cream md:p-7">
+        <p className="font-display text-h2 font-light">{item.label}</p>
+        <ButtonLink href={item.href} variant="cream" size="sm" shape="pill">
           {item.cta}
           <ArrowUpRightIcon width={16} height={16} />
         </ButtonLink>

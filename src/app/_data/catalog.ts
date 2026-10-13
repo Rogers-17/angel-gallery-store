@@ -1,18 +1,18 @@
-// TEMPORARY demo data for the design-B review page (/design-b) and its product pages.
-// Independent from design A's catalog. Replace with Drizzle queries once the product schema exists.
-// Images live in public/images/design-b (see CREDITS.md there).
+// TEMPORARY demo catalog for the storefront and product pages.
+// Replace with Drizzle queries once the product schema exists.
+// Images live in public/images/demo (see CREDITS.md there).
 import type { MediaTone } from "@/components/ui/media";
 
-export type BImage = {
+export type ProductImage = {
   src: string;
   alt: string;
   /** Tailwind object-position class for cropping. */
   position?: string;
 };
 
-export type BColor = { name: string; swatch: string };
+export type ProductColor = { name: string; swatch: string };
 
-export type BProduct = {
+export type Product = {
   slug: string;
   name: string;
   collection: "new-arrivals" | "summer";
@@ -27,14 +27,13 @@ export type BProduct = {
   description: string;
   materials: string[];
   care: string;
-  colors: BColor[];
+  colors: ProductColor[];
   sizes: string[];
-  tone: MediaTone;
-  image: BImage;
+  image: ProductImage;
 };
 
-const img = (file: string, alt: string, position?: string): BImage => ({
-  src: `/images/design-b/${file}`,
+const img = (file: string, alt: string, position?: string): ProductImage => ({
+  src: `/images/demo/${file}`,
   alt,
   position,
 });
@@ -43,7 +42,7 @@ const shoeSizes = ["EU 36", "EU 37", "EU 38", "EU 39", "EU 40", "EU 41", "EU 42"
 const clothingSizes = ["XS", "S", "M", "L", "XL"];
 const oneSize = ["One size"];
 
-export const products: BProduct[] = [
+export const products: Product[] = [
   // Newly dropped: footwear
   {
     slug: "suede-penny-loafer",
@@ -59,7 +58,6 @@ export const products: BProduct[] = [
     care: "Brush regularly with a suede brush. Treat with a protective spray before first wear.",
     colors: [{ name: "Tobacco", swatch: "#8a5a35" }, { name: "Espresso", swatch: "#3b2a20" }],
     sizes: shoeSizes,
-    tone: "clay",
     image: img("suede-loafers.jpg", "Pair of brown suede penny loafers on a woven rug"),
   },
   {
@@ -77,7 +75,6 @@ export const products: BProduct[] = [
     care: "Wipe clean and condition with leather balm every few months.",
     colors: [{ name: "Cognac", swatch: "#9a5b32" }, { name: "Black", swatch: "#1f1b18" }],
     sizes: shoeSizes,
-    tone: "sand",
     image: img("lace-up-boots.jpg", "Brown leather lace-up boots on a wooden floor"),
   },
   {
@@ -94,7 +91,6 @@ export const products: BProduct[] = [
     care: "Spot clean with mild soap and water. Air dry away from direct heat.",
     colors: [{ name: "Chalk", swatch: "#f1eee8" }, { name: "Sand", swatch: "#d8c9b0" }],
     sizes: shoeSizes,
-    tone: "mist",
     image: img("white-sneakers.jpg", "White canvas sneakers worn with cuffed jeans"),
   },
   {
@@ -112,7 +108,6 @@ export const products: BProduct[] = [
     care: "Store in the dust bag. Wipe with a soft dry cloth.",
     colors: [{ name: "Gold", swatch: "#c6a15b" }, { name: "Bronze", swatch: "#8c6239" }],
     sizes: shoeSizes,
-    tone: "sand",
     image: img("gold-slingbacks.jpg", "Pair of gold leather slingback sandals"),
   },
   {
@@ -130,7 +125,6 @@ export const products: BProduct[] = [
     care: "Keep away from prolonged water exposure. Reseal cork as needed.",
     colors: [{ name: "White", swatch: "#f4f2ee" }, { name: "Taupe", swatch: "#a39182" }],
     sizes: shoeSizes,
-    tone: "stone",
     image: img("buckle-sandals.jpg", "White two-strap buckle sandals worn on pebbles"),
   },
   {
@@ -147,7 +141,6 @@ export const products: BProduct[] = [
     care: "Wipe patent leather with a soft damp cloth. Store with shoe trees.",
     colors: [{ name: "Ivory", swatch: "#f3eee4" }, { name: "Blush", swatch: "#e8c8bf" }],
     sizes: shoeSizes,
-    tone: "mist",
     image: img("pointed-heels.jpg", "White pointed leather pumps on a cabinet beside flowers", "object-top"),
   },
 
@@ -167,7 +160,6 @@ export const products: BProduct[] = [
     care: "Store stuffed with tissue in the dust bag. Avoid overfilling to keep its shape.",
     colors: [{ name: "Cognac", swatch: "#a3542a" }, { name: "Black", swatch: "#1f1b18" }],
     sizes: oneSize,
-    tone: "sand",
     image: img("woven-tote.jpg", "Cognac woven leather tote bag with a gold chain strap"),
   },
   {
@@ -184,7 +176,6 @@ export const products: BProduct[] = [
     care: "Wipe with a damp cloth. Condition the leather twice a year.",
     colors: [{ name: "Black", swatch: "#1f1b18" }, { name: "Taupe", swatch: "#a39182" }],
     sizes: oneSize,
-    tone: "stone",
     image: img("bucket-bag.jpg", "Black mini leather backpack in a pool of sunlight"),
   },
   {
@@ -201,7 +192,6 @@ export const products: BProduct[] = [
     care: "Keep away from direct sunlight. Store upright in the dust bag.",
     colors: [{ name: "Black", swatch: "#1f1b18" }, { name: "Navy", swatch: "#273650" }],
     sizes: oneSize,
-    tone: "mist",
     image: img("top-handle-bag.jpg", "Black structured top-handle bag held against a grey wall"),
   },
   {
@@ -218,7 +208,6 @@ export const products: BProduct[] = [
     care: "Machine wash cold inside out. Line dry.",
     colors: [{ name: "Light wash", swatch: "#9fb4c9" }, { name: "Indigo", swatch: "#2f4566" }],
     sizes: clothingSizes,
-    tone: "mist",
     image: img("denim-jacket.jpg", "Light-wash denim jacket hanging on a white door"),
   },
   {
@@ -240,7 +229,6 @@ export const products: BProduct[] = [
       { name: "Charcoal", swatch: "#3d3a37" },
     ],
     sizes: clothingSizes,
-    tone: "clay",
     image: img("knit-sweaters.jpg", "Stack of folded merino sweaters in camel, taupe and charcoal"),
   },
   {
@@ -257,7 +245,6 @@ export const products: BProduct[] = [
     care: "Machine wash at 30°C. Tumble dry low.",
     colors: [{ name: "White", swatch: "#f7f6f2" }, { name: "Black", swatch: "#1f1b18" }],
     sizes: clothingSizes,
-    tone: "mist",
     image: img("cotton-tee.jpg", "White organic cotton tee laid flat with sneakers and a magazine"),
   },
 ];
@@ -265,12 +252,12 @@ export const products: BProduct[] = [
 export const newArrivals = products.filter((p) => p.collection === "new-arrivals");
 export const summerCollection = products.filter((p) => p.collection === "summer");
 
-export function getProduct(slug: string): BProduct | undefined {
+export function getProduct(slug: string): Product | undefined {
   return products.find((p) => p.slug === slug);
 }
 
 /** Up to `limit` other products, same department first. */
-export function getRelatedProducts(product: BProduct, limit = 3): BProduct[] {
+export function getRelatedProducts(product: Product, limit = 3): Product[] {
   const others = products.filter((p) => p.slug !== product.slug);
   const sameDepartment = others.filter((p) => p.department === product.department);
   const rest = others.filter((p) => p.department !== product.department);
@@ -278,7 +265,7 @@ export function getRelatedProducts(product: BProduct, limit = 3): BProduct[] {
 }
 
 export function productHref(slug: string): string {
-  return `/design-b/products/${slug}`;
+  return `/products/${slug}`;
 }
 
 export function formatPrice(amount: number): string {
@@ -295,21 +282,21 @@ export const promoTiles = [
   {
     title: "Shoes That Move With You, Comfortable, Durable And Always In Style.",
     cta: "Find Your Fit",
-    href: "/design-b#new-arrivals",
+    href: "/#new-arrivals",
     tone: "clay" as MediaTone,
     image: img("tile-shoes.jpg", "Worn beige sneakers with striped socks"),
   },
   {
     title: "Fresh Drops: Iconic Silhouettes. Bags That Carry Your Day In Style.",
     cta: "Shop Bags",
-    href: "/design-b#summer",
+    href: "/#summer",
     tone: "sand" as MediaTone,
     image: img("tile-bags.jpg", "Woman in a red dress holding a navy leather handbag"),
   },
   {
     title: "THE EDIT",
     cta: "Shop Clothing",
-    href: "/design-b#summer",
+    href: "/#summer",
     tone: "stone" as MediaTone,
     image: img("tile-clothing.jpg", "Woman in an oversized beige blazer"),
     /** Large centred label instead of a sentence (third reference tile). */
@@ -318,16 +305,16 @@ export const promoTiles = [
 ];
 
 export const mosaic = {
-  tall: { label: "Footwear", cta: "View all footwear", href: "/design-b#new-arrivals", tone: "stone" as MediaTone, image: img("mosaic-footwear.jpg", "Man seated on a chair in a studio wearing black sneakers", "object-[50%_70%]") },
-  topRight: { label: "Bags", cta: "View all bags", href: "/design-b#summer", tone: "mist" as MediaTone, image: img("mosaic-bags.jpg", "Pink leather handbag on a desk with drawing tools") },
-  bottomRight: { label: "Knitwear", cta: "View all knitwear", href: "/design-b#summer", tone: "sand" as MediaTone, image: img("mosaic-knitwear.jpg", "Stack of chunky knit sweaters beside a ball of yarn") },
-  wide: { label: "Trending Now", cta: "Explore Shop", href: "/design-b#new-arrivals", tone: "mist" as MediaTone, image: img("mosaic-trending.jpg", "Flat lay of leather boots, belt, watch and folded clothes") },
+  tall: { label: "Footwear", cta: "View all footwear", href: "/#new-arrivals", tone: "stone" as MediaTone, image: img("mosaic-footwear.jpg", "Man seated on a chair in a studio wearing black sneakers", "object-[50%_70%]") },
+  topRight: { label: "Bags", cta: "View all bags", href: "/#summer", tone: "mist" as MediaTone, image: img("mosaic-bags.jpg", "Pink leather handbag on a desk with drawing tools") },
+  bottomRight: { label: "Knitwear", cta: "View all knitwear", href: "/#summer", tone: "sand" as MediaTone, image: img("mosaic-knitwear.jpg", "Stack of chunky knit sweaters beside a ball of yarn") },
+  wide: { label: "Trending Now", cta: "Explore Shop", href: "/#new-arrivals", tone: "mist" as MediaTone, image: img("mosaic-trending.jpg", "Flat lay of leather boots, belt, watch and folded clothes") },
 };
 
 export const banner = {
   title: "Build Your Style With Confident Steps In Pieces Made To Last.",
   cta: "Shop Now",
-  href: "/design-b#new-arrivals",
+  href: "/#new-arrivals",
   tone: "stone" as MediaTone,
   image: img("banner-laces.jpg", "Close-up of hands tying the laces of white sneakers", "object-[50%_75%]"),
 };

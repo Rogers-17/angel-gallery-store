@@ -17,17 +17,15 @@ type ProductGalleryProps = {
   src: string;
   alt: string;
   position?: string;
-  /** Tone utility for the loading background, e.g. "tone-sand". */
-  toneClass: string;
 };
 
-export function ProductGallery({ src, alt, position, toneClass }: ProductGalleryProps) {
+export function ProductGallery({ src, alt, position }: ProductGalleryProps) {
   const [active, setActive] = useState(0);
   const view = views[active];
 
   return (
     <div className="flex flex-col gap-3">
-      <div className={cn("relative aspect-square overflow-hidden rounded-card", toneClass)}>
+      <div className="well relative aspect-square overflow-hidden">
         <Image
           src={src}
           alt={`${alt} (${view.label.toLowerCase()})`}
@@ -46,8 +44,7 @@ export function ProductGallery({ src, alt, position, toneClass }: ProductGallery
               aria-label={thumb.label}
               aria-pressed={active === index}
               className={cn(
-                "relative block aspect-square w-full overflow-hidden rounded-control border-2 transition-colors",
-                toneClass,
+                "relative block aspect-square w-full overflow-hidden rounded-control border-2 bg-linear-to-b from-well-from to-well-to transition-colors",
                 active === index ? "border-primary" : "border-transparent hover:border-line-strong",
               )}
             >
