@@ -13,8 +13,11 @@ import { Heading, SectionHeader } from "@/components/ui/heading";
 import { Section } from "@/components/ui/section";
 import { Tag } from "@/components/ui/tag";
 import { getActiveProductSlugs, getProductBySlug, getRelatedProducts } from "@/db/queries/catalog";
+import { breadcrumbJsonLd, JsonLd } from "@/components/seo/json-ld";
 import { getStoreSettings } from "@/db/queries/settings";
+import type { ProductDetail } from "@/db/queries/types";
 import { formatRate } from "@/lib/money";
+import { absoluteUrl, siteName } from "@/lib/site";
 
 type PageProps = { params: Promise<{ slug: string }> };
 
@@ -36,9 +39,41 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const product = await getProductBySlug((await params).slug);
   if (!product) return {};
+  const image = product.images[0];
   return {
     title: product.seoTitle ?? product.name,
     description: product.seoDescription ?? product.summary,
+    alternates: { canonical: `/products/${product.slug}` },
+    openGraph: {
+      type: "website",
+      title: product.name,
+      description: product.summary,
+      images: image ? [{ url: image.url, alt: image.alt }] : undefined,
+    },
+  };
+}
+
+function productJsonLd(product: ProductDetail): Record<string, unknown> {
+  const prices = product.variants.map((v) => v.priceCents);
+  const inStock = product.variants.some((v) => v.stock > 0);
+  return {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    description: product.description,
+    image: product.images.map((i) => absoluteUrl(i.url)),
+    sku: product.variants[0]?.sku,
+    brand: { "@type": "Brand", name: siteName },
+    category: product.category.name,
+    offers: {
+      "@type": "AggregateOffer",
+      priceCurrency: "USD",
+      lowPrice: (Math.min(...prices) / 100).toFixed(2),
+      highPrice: (Math.max(...prices) / 100).toFixed(2),
+      offerCount: product.variants.length,
+      availability: inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      url: absoluteUrl(`/products/${product.slug}`),
+    },
   };
 }
 
@@ -61,17 +96,18 @@ async function ProductDetails({ params }: PageProps) {
     getStoreSettings(),
   ]);
   const primaryImage = product.images[0];
+  const crumbs = [
+    { label: "Home", href: "/" },
+    { label: product.category.name, href: `/shop/${product.category.slug}` },
+    { label: product.name },
+  ];
 
   return (
     <main className="flex-1">
+      <JsonLd data={productJsonLd(product)} />
+      <JsonLd data={breadcrumbJsonLd(crumbs, `/products/${product.slug}`)} />
       <Container className="pt-8 pb-section-sm">
-        <Breadcrumb
-          items={[
-            { label: "Home", href: "/" },
-            { label: product.category.name, href: product.category.slug === "shoes" ? "/#new-arrivals" : "/#summer" },
-            { label: product.name },
-          ]}
-        />
+        <Breadcrumb items={crumbs} />
 
         <div className="mt-8 grid gap-10 lg:grid-cols-2 lg:gap-16">
           {primaryImage && (

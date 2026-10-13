@@ -30,7 +30,7 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-1">
-          <Link href="#" aria-label="Search" className={iconLink}><SearchIcon /></Link>
+          <Link href="/search" aria-label="Search" className={iconLink}><SearchIcon /></Link>
           <Link href="#" aria-label="Account" className={`${iconLink} max-md:hidden`}><UserIcon /></Link>
           <Link href="#" aria-label="Wishlist" className={`${iconLink} max-md:hidden`}><HeartIcon /></Link>
           <Link href="#" aria-label="Bag, 0 items" className={`${iconLink} relative`}>

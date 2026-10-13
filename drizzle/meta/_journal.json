@@ -8,6 +8,13 @@
       "when": 1791882363794,
       "tag": "0000_keen_speed",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791885193080,
+      "tag": "0001_complete_warlock",
+      "breakpoints": true
     }
   ]
 }

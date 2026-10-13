@@ -1,4 +1,7 @@
+import type { Metadata } from "next";
 import { CtaBanner } from "@/components/home/cta-banner";
+import { JsonLd } from "@/components/seo/json-ld";
+import { absoluteUrl, siteName, siteUrl } from "@/lib/site";
 import { Mosaic } from "@/components/home/mosaic";
 import { PromoTiles } from "@/components/home/promo-tiles";
 import { ArrowLeftIcon, ArrowRightIcon } from "@/components/layout/icons";
@@ -35,7 +38,7 @@ async function ProductSection({ id, collection, title, subtitle, lrdPerUsd }: {
           ))}
         </ProductGrid>
         <div className="mt-12 flex justify-center">
-          <ButtonLink href="#" variant="outline" size="sm" shape="pill">
+          <ButtonLink href={`/collections/${collection}`} variant="outline" size="sm" shape="pill">
             See More Collections
           </ButtonLink>
         </div>
@@ -44,11 +47,34 @@ async function ProductSection({ id, collection, title, subtitle, lrdPerUsd }: {
   );
 }
 
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
+
 export default async function Home() {
-  const { lrdPerUsd } = await getStoreSettings();
+  const settings = await getStoreSettings();
+  const { lrdPerUsd } = settings;
 
   return (
     <main className="flex-1">
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: siteName,
+          url: siteUrl,
+          logo: absoluteUrl("/opengraph-image"),
+          ...(settings.contactPhone && {
+            contactPoint: {
+              "@type": "ContactPoint",
+              telephone: settings.contactPhone,
+              contactType: "customer service",
+              areaServed: "LR",
+              availableLanguage: "English",
+            },
+          }),
+        }}
+      />
       {/* Hero: the transparent header floats over it. */}
       <section className="relative">
         {/* Mirrored so the model sits right and the headline left. */}

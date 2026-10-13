@@ -1,23 +1,27 @@
 export type NavLink = { label: string; href: string };
 
 export const primaryNav: NavLink[] = [
-  { label: "Women", href: "/#new-arrivals" },
-  { label: "Men", href: "/#new-arrivals" },
-  { label: "Shoes", href: "/#new-arrivals" },
-  { label: "Bags", href: "/#summer" },
-  { label: "Collections", href: "/#recommended" },
+  { label: "Women", href: "/shop?audience=women" },
+  { label: "Men", href: "/shop?audience=men" },
+  { label: "Shoes", href: "/shop/shoes" },
+  { label: "Bags", href: "/shop/bags" },
+  { label: "Clothing", href: "/shop/clothing" },
+  { label: "New In", href: "/collections/new-arrivals" },
 ];
 
+// Legal and Help pages are built in roadmap Phase 8; their links stay "#" until then.
 export const footerNav: { title: string; links: NavLink[] }[] = [
   {
     title: "Categories",
     links: [
-      { label: "Women", href: "/#new-arrivals" },
-      { label: "Men", href: "/#new-arrivals" },
-      { label: "Shoes", href: "/#new-arrivals" },
-      { label: "Bags", href: "/#summer" },
-      { label: "Clothing", href: "/#summer" },
-      { label: "Collections", href: "/#recommended" },
+      { label: "Shop All", href: "/shop" },
+      { label: "Women", href: "/shop?audience=women" },
+      { label: "Men", href: "/shop?audience=men" },
+      { label: "Shoes", href: "/shop/shoes" },
+      { label: "Bags", href: "/shop/bags" },
+      { label: "Clothing", href: "/shop/clothing" },
+      { label: "New Arrivals", href: "/collections/new-arrivals" },
+      { label: "Summer Collection", href: "/collections/summer" },
     ],
   },
   {

@@ -1,9 +1,10 @@
 // Drizzle table definitions. Column names are camelCase here and snake_case in SQL
 // (`casing: "snake_case"` in src/db/index.ts, scripts/db.ts and drizzle.config.ts).
 // After changes: `pnpm db:generate`, review the SQL in drizzle/, then `pnpm db:migrate`.
-import { relations, sql } from "drizzle-orm";
+import { relations, type SQL, sql } from "drizzle-orm";
 import {
   check,
+  customType,
   index,
   integer,
   jsonb,
@@ -29,6 +30,15 @@ const timestamps = {
 
 export const productStatus = pgEnum("product_status", ["draft", "active", "archived"]);
 export const productBadge = pgEnum("product_badge", ["new", "bestseller"]);
+/** Who a product is for. "unisex" products appear under both Women and Men. */
+export const productAudience = pgEnum("product_audience", ["women", "men", "unisex"]);
+
+/** Postgres full-text search vector (read-only, generated). */
+const tsvector = customType<{ data: string }>({
+  dataType() {
+    return "tsvector";
+  },
+});
 
 // ── Catalog ────────────────────────────────────────────────────────────
 
@@ -67,13 +77,24 @@ export const products = pgTable(
     materials: text().array().notNull().default(sql`'{}'::text[]`),
     care: text(),
     badge: productBadge(),
+    audience: productAudience().notNull().default("unisex"),
     status: productStatus().notNull().default("draft"),
     seoTitle: text(),
     seoDescription: text(),
     publishedAt: timestamp({ withTimezone: true }),
+    /** Weighted search document: name (A), tag (B), summary (C), description (D). */
+    searchVector: tsvector().generatedAlwaysAs(
+      (): SQL =>
+        sql`setweight(to_tsvector('english', ${products.name}), 'A') || setweight(to_tsvector('english', ${products.tag}), 'B') || setweight(to_tsvector('english', ${products.summary}), 'C') || setweight(to_tsvector('english', ${products.description}), 'D')`,
+    ),
     ...timestamps,
   },
-  (table) => [index("products_status_idx").on(table.status), index("products_category_idx").on(table.categoryId)],
+  (table) => [
+    index("products_status_idx").on(table.status),
+    index("products_category_idx").on(table.categoryId),
+    index("products_audience_idx").on(table.audience),
+    index("products_search_idx").using("gin", table.searchVector),
+  ],
 );
 
 export const collectionProducts = pgTable(

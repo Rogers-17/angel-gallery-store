@@ -55,3 +55,20 @@ export type StoreSettingsData = {
   contactEmail: string | null;
   contactPhone: string | null;
 };
+
+export type ProductAudience = "women" | "men" | "unisex";
+
+/** A product card plus the facet data listings filter and sort on (in memory). */
+export type ListingItem = ProductCardData & {
+  audience: ProductAudience;
+  categorySlug: string;
+  sizes: string[];
+  colors: { name: string; hex: string }[];
+  /** ISO timestamp, for "newest". */
+  createdAt: string;
+  /** Position in the scope's natural order (collection order, else newest first). */
+  position: number;
+};
+
+export type CategoryData = { id: string; slug: string; name: string; description: string | null };
+export type CollectionData = { id: string; slug: string; name: string; description: string | null };

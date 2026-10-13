@@ -35,21 +35,21 @@ export const promoTiles = [
   {
     title: "Shoes That Move With You, Comfortable, Durable And Always In Style.",
     cta: "Find Your Fit",
-    href: "/#new-arrivals",
+    href: "/shop/shoes",
     tone: "clay" as MediaTone,
     image: img("tile-shoes.jpg", "Worn beige sneakers with striped socks"),
   },
   {
     title: "Fresh Drops: Iconic Silhouettes. Bags That Carry Your Day In Style.",
     cta: "Shop Bags",
-    href: "/#summer",
+    href: "/shop/bags",
     tone: "sand" as MediaTone,
     image: img("tile-bags.jpg", "Woman in a red dress holding a navy leather handbag"),
   },
   {
     title: "THE EDIT",
     cta: "Shop Clothing",
-    href: "/#summer",
+    href: "/shop/clothing",
     tone: "stone" as MediaTone,
     image: img("tile-clothing.jpg", "Woman in an oversized beige blazer"),
     /** Large centred label instead of a sentence. */
@@ -58,16 +58,16 @@ export const promoTiles = [
 ];
 
 export const mosaic = {
-  tall: { label: "Footwear", cta: "View all footwear", href: "/#new-arrivals", tone: "stone" as MediaTone, image: img("mosaic-footwear.jpg", "Man seated on a chair in a studio wearing black sneakers", "object-[50%_70%]") },
-  topRight: { label: "Bags", cta: "View all bags", href: "/#summer", tone: "mist" as MediaTone, image: img("mosaic-bags.jpg", "Pink leather handbag on a desk with drawing tools") },
-  bottomRight: { label: "Knitwear", cta: "View all knitwear", href: "/#summer", tone: "sand" as MediaTone, image: img("mosaic-knitwear.jpg", "Stack of chunky knit sweaters beside a ball of yarn") },
-  wide: { label: "Trending Now", cta: "Explore Shop", href: "/#new-arrivals", tone: "mist" as MediaTone, image: img("mosaic-trending.jpg", "Flat lay of leather boots, belt, watch and folded clothes") },
+  tall: { label: "Footwear", cta: "View all footwear", href: "/shop/shoes", tone: "stone" as MediaTone, image: img("mosaic-footwear.jpg", "Man seated on a chair in a studio wearing black sneakers", "object-[50%_70%]") },
+  topRight: { label: "Bags", cta: "View all bags", href: "/shop/bags", tone: "mist" as MediaTone, image: img("mosaic-bags.jpg", "Pink leather handbag on a desk with drawing tools") },
+  bottomRight: { label: "Knitwear", cta: "View all knitwear", href: "/shop/clothing", tone: "sand" as MediaTone, image: img("mosaic-knitwear.jpg", "Stack of chunky knit sweaters beside a ball of yarn") },
+  wide: { label: "Trending Now", cta: "Explore Shop", href: "/collections/new-arrivals", tone: "mist" as MediaTone, image: img("mosaic-trending.jpg", "Flat lay of leather boots, belt, watch and folded clothes") },
 };
 
 export const banner = {
   title: "Build Your Style With Confident Steps In Pieces Made To Last.",
   cta: "Shop Now",
-  href: "/#new-arrivals",
+  href: "/shop",
   tone: "stone" as MediaTone,
   image: img("banner-laces.jpg", "Close-up of hands tying the laces of white sneakers", "object-[50%_75%]"),
 };

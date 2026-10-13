@@ -1,15 +1,24 @@
 import type { Metadata } from "next";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { siteDescription, siteName, siteUrl } from "@/lib/site";
 import { fraunces, mono, sans } from "./fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: {
-    default: "Angel Gallery Store",
-    template: "%s · Angel Gallery Store",
+    default: `${siteName} Store`,
+    template: `%s · ${siteName}`,
   },
-  description: "Shoes, bags and clothing from independent makers, curated by Angel Gallery.",
+  description: siteDescription,
+  applicationName: siteName,
+  openGraph: {
+    siteName,
+    type: "website",
+    locale: "en_LR",
+  },
+  twitter: { card: "summary_large_image" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

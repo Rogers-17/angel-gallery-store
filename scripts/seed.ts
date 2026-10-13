@@ -23,6 +23,13 @@ function skuPart(value: string, length: number) {
   return value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, length) || "X";
 }
 
+/** "Men's Shoes" → men, "Women's Heels" → women, anything else → unisex. */
+function audienceFromTag(tag: string): "women" | "men" | "unisex" {
+  if (/^men's\b/i.test(tag)) return "men";
+  if (/^women's\b/i.test(tag)) return "women";
+  return "unisex";
+}
+
 function buildSku(slug: string, color: string, size: string) {
   const prefix = slug
     .split("-")
@@ -60,6 +67,7 @@ async function main() {
       materials: item.materials,
       care: item.care,
       badge: item.badge,
+      audience: audienceFromTag(item.tag),
       status: "active",
       publishedAt: now,
     });

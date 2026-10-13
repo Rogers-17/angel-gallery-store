@@ -13,7 +13,7 @@ import { TextLink } from "@/components/ui/text-link";
 import { getCollectionProducts } from "@/db/queries/catalog";
 import { getStoreSettings } from "@/db/queries/settings";
 
-export const metadata: Metadata = { title: "Design system" };
+export const metadata: Metadata = { title: "Design system", robots: { index: false, follow: false } };
 
 // Literal class names so Tailwind generates them.
 const colorGroups: { title: string; colors: { name: string; swatch: string; note: string }[] }[] = [

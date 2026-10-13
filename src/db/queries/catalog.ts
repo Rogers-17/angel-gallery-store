@@ -2,49 +2,10 @@ import "server-only";
 import { and, asc, eq } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 import { getDb } from "@/db";
-import { collections, productImages, products, productVariants } from "@/db/schema";
+import { categories, collections, productImages, products, productVariants } from "@/db/schema";
+import { toCard, toImage, toVariant } from "./mappers";
 import { cacheTags } from "./tags";
-import type { ImageData, ProductCardData, ProductDetail, VariantData } from "./types";
-
-type VariantRow = typeof productVariants.$inferSelect;
-type ImageRow = typeof productImages.$inferSelect;
-type ProductRow = typeof products.$inferSelect;
-
-function toImage(row: ImageRow): ImageData {
-  return { url: row.url, alt: row.alt, objectPosition: row.objectPosition };
-}
-
-function toVariant(row: VariantRow): VariantData {
-  return {
-    id: row.id,
-    sku: row.sku,
-    color: row.color,
-    colorHex: row.colorHex,
-    size: row.size,
-    priceCents: row.priceCents,
-    compareAtCents: row.compareAtCents,
-    stock: row.stock,
-  };
-}
-
-/** Card fields shared by listings and product pages. Price = cheapest variant. */
-function toCard(product: ProductRow, variants: VariantRow[], images: ImageRow[]): ProductCardData {
-  const cheapest = variants.reduce<VariantRow | undefined>(
-    (min, v) => (!min || v.priceCents < min.priceCents ? v : min),
-    undefined,
-  );
-  return {
-    slug: product.slug,
-    name: product.name,
-    tag: product.tag,
-    summary: product.summary,
-    badge: product.badge,
-    priceCents: cheapest?.priceCents ?? 0,
-    compareAtCents: cheapest?.compareAtCents ?? null,
-    inStock: variants.some((v) => v.stock > 0),
-    image: images[0] ? toImage(images[0]) : null,
-  };
-}
+import type { CategoryData, CollectionData, ProductCardData, ProductDetail } from "./types";
 
 const cardRelations = {
   variants: { orderBy: [asc(productVariants.position)] },
@@ -114,7 +75,7 @@ export async function getRelatedProducts(
   cacheLife("hours");
   cacheTag(cacheTags.catalog);
 
-  // The catalog is small; rank in JS. Revisit with a SQL ORDER BY when it grows (Phase 2).
+  // The catalog is small; rank in JS. Revisit with a SQL ORDER BY when it grows.
   const rows = await getDb().query.products.findMany({
     where: eq(products.status, "active"),
     orderBy: [asc(products.createdAt)],
@@ -139,4 +100,35 @@ export async function getActiveProductSlugs(): Promise<string[]> {
     .from(products)
     .where(eq(products.status, "active"));
   return rows.map((r) => r.slug);
+}
+
+export async function getCategories(): Promise<CategoryData[]> {
+  "use cache";
+  cacheLife("hours");
+  cacheTag(cacheTags.catalog);
+
+  const rows = await getDb().select().from(categories).orderBy(asc(categories.position));
+  return rows.map(({ id, slug, name, description }) => ({ id, slug, name, description }));
+}
+
+export async function getCollections(): Promise<CollectionData[]> {
+  "use cache";
+  cacheLife("hours");
+  cacheTag(cacheTags.catalog);
+
+  const rows = await getDb().select().from(collections).orderBy(asc(collections.position));
+  return rows.map(({ id, slug, name, description }) => ({ id, slug, name, description }));
+}
+
+/** Data for sitemap.xml: active product slugs with their last update. */
+export async function getSitemapProducts(): Promise<{ slug: string; updatedAt: string }[]> {
+  "use cache";
+  cacheLife("hours");
+  cacheTag(cacheTags.catalog);
+
+  const rows = await getDb()
+    .select({ slug: products.slug, updatedAt: products.updatedAt })
+    .from(products)
+    .where(eq(products.status, "active"));
+  return rows.map((r) => ({ slug: r.slug, updatedAt: r.updatedAt.toISOString() }));
 }
