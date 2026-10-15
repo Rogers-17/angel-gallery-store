@@ -183,14 +183,14 @@ Goal: a real catalog in Neon replaces `src/app/_data/catalog.ts`.
 
 ## Phase 3: Cart (guest-first) ✅
 
-- [x] `carts` + `cart_items` tables. The cart ID lives in an httpOnly, signed cookie (`ag_cart`, HMAC with `CART_COOKIE_SECRET`), so guests get a persistent cart with no account. Lines store no prices.
-- [x] Server actions to add, update quantity and remove (`src/app/actions/cart.ts`). Each one checks the variant exists, is active and is in stock, and caps quantities (≤ stock, ≤ 10 per line, ≤ 30 lines).
-- [x] Cart drawer (header bag icon with live count) and a `/cart` page:
+- [x] `carts` + `cart_items` tables. The cart ID lives in an httpOnly, signed cookie (`ag_cart`, HMAC with `CART_COOKIE_SECRET`), so guests get a persistent cart with no account. Lines store no prices. (96e7084)
+- [x] Server actions to add, update quantity and remove (`src/app/actions/cart.ts`). Each one checks the variant exists, is active and is in stock, and caps quantities (≤ stock, ≤ 10 per line, ≤ 30 lines). (96e7084)
+- [x] Cart drawer (header bag icon with live count) and a `/cart` page (96e7084):
   - subtotal in USD + ≈ LRD, recomputed on the server
   - "Delivery fee: agreed on WhatsApp" line
   - checkout button disabled ("Checkout opens soon") until Phase 4
   - product cards: "Choose Options" → product page; single-variant products add from the card
-- [x] Cart expiry (sliding 30 days) and cleanup: a batch of expired carts is swept after each new cart (`after()`), plus `pnpm carts:cleanup`.
+- [x] Cart expiry (sliding 30 days) and cleanup: a batch of expired carts is swept after each new cart (`after()`), plus `pnpm carts:cleanup`. (96e7084)
 
 ## Phase 4: Checkout & WhatsApp order hand-off (core flow)
 
