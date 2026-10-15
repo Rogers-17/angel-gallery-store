@@ -95,21 +95,19 @@ export async function searchProducts(normalizedQuery: string): Promise<ListingIt
   const tokens = normalizedQuery.split(" ").filter((t) => /^[a-z0-9]+$/.test(t));
   if (tokens.length === 0) return [];
   const tsquery = tokens.map((t) => `${t}:*`).join(" & ");
+  const query = sql`to_tsquery('english', ${tsquery})`;
+  // The category name can't live in the generated column (other table), so it's added here,
+  // weighted like the tag. Not index-backed; fine until a scope passes ~1,000 products.
+  const searchDocument = sql`(${products.searchVector} || setweight(to_tsvector('english', ${categories.name}), 'B'))`;
+  const rank = sql<number>`ts_rank(${searchDocument}, ${query})`;
 
   const db = getDb();
   const ranked = await db
-    .select({
-      id: products.id,
-      rank: sql<number>`ts_rank(${products.searchVector}, to_tsquery('english', ${tsquery}))`,
-    })
+    .select({ id: products.id, rank })
     .from(products)
-    .where(
-      and(
-        eq(products.status, "active"),
-        sql`${products.searchVector} @@ to_tsquery('english', ${tsquery})`,
-      ),
-    )
-    .orderBy(desc(sql`ts_rank(${products.searchVector}, to_tsquery('english', ${tsquery}))`))
+    .innerJoin(categories, eq(categories.id, products.categoryId))
+    .where(and(eq(products.status, "active"), sql`${searchDocument} @@ ${query}`))
+    .orderBy(desc(rank))
     .limit(100);
   if (ranked.length === 0) return [];
 

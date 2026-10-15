@@ -172,13 +172,13 @@ Goal: a real catalog in Neon replaces `src/app/_data/catalog.ts`.
 - [x] Homepage, product pages and `/design-system` read from the database. Delete `_data/catalog.ts`. (09b6209)
 - [x] Variant-aware product page: colour and size pick a real variant, and price, stock and "sold out" follow it. (09b6209)
 
-## Phase 2: Browse, search & SEO
+## Phase 2: Browse, search & SEO ✅
 
-- [ ] Listing pages (`/shop`, `/shop/[category]`, `/collections/[slug]`) with sort (newest, price) and filters (category, size, colour, price) in URL search params, plus pagination.
-- [ ] Search (`/search`) using Postgres full-text or trigram search over name, summary and tags.
-- [ ] Header, footer and homepage links point to real pages (no `#` placeholders left).
-- [ ] SEO: per-page metadata and Open Graph images, Product JSON-LD (USD price, availability), `sitemap.ts`, `robots.ts`, canonical URLs.
-- [ ] Loading, empty and not-found states for every listing.
+- [x] Listing pages (`/shop`, `/shop/[category]`, `/collections/[slug]`) with sort (newest, price) and filters (category, audience, size, colour, price, in stock) in URL search params, plus pagination. (fc3b4d7)
+- [x] Search (`/search`) using Postgres full-text search over name, tag, summary and description, plus the category name at query time. (fc3b4d7)
+- [x] Header, footer and homepage links point to real pages (no `#` placeholders left; footer Legal/Help stay `#` until Phase 8). (fc3b4d7)
+- [x] SEO: per-page metadata and Open Graph images, Product JSON-LD (USD price, availability), `sitemap.ts`, `robots.ts`, canonical URLs. (fc3b4d7)
+- [x] Loading, empty and not-found states for every listing. Unknown slugs render the not-found page with status 200 + `noindex` (streaming has started; a real 404 would cost the instant App Shell). (fc3b4d7)
 
 ## Phase 3: Cart (guest-first)
 
@@ -298,7 +298,9 @@ Goal: a real catalog in Neon replaces `src/app/_data/catalog.ts`.
 - [ ] **Security review:** validation on every input, rate limits, admin checks on every server action, no secrets in client code, security headers.
 - [ ] **Production:**
   - Vercel project and env vars
-  - a Neon production branch with preview branches (auth state and storage branch with the database)
+  - a Neon production branch with preview branches (auth state and storage branch with the database); a Preview `DATABASE_URL` (none yet, so preview builds fail)
+  - `CACHE_NAMESPACE` per environment: `production` for Production, `preview` for Preview (currently one shared value)
+  - run `pnpm db:migrate` automatically on deploy (today it's manual; see "Production database")
   - custom domain, backups and point-in-time restore
 - [ ] Replace the demo photos and catalog with real content; remove the `/design-b` redirects.
 
@@ -314,10 +316,26 @@ Neon Postgres is the source of truth for app data. All database access goes thro
 - Database modules import `server-only`. Never import `@/db` from client components.
 - After schema changes run `pnpm db:generate`, review the SQL in `drizzle/`, then `pnpm db:migrate`. Use `pnpm db:push` only for prototyping.
 
+## Production database
+
+- Vercel's Production `DATABASE_URL` is managed by the Neon–Vercel integration. Its Neon project lives in the Vercel-managed Neon organization (not your own project list): open it from Vercel → Storage → the database → Open in Neon. Local development uses a separate development branch in `.env`.
+- Migrations do **not** run on deploy. Before deploying a schema change, migrate production from PowerShell (scripts and drizzle-kit don't override a variable already set in the shell):
+
+  ```powershell
+  $env:DATABASE_URL = "<Vercel Production DATABASE_URL>"
+  $env:CACHE_NAMESPACE = "production"
+  pnpm db:migrate
+  Remove-Item Env:DATABASE_URL, Env:CACHE_NAMESPACE
+  ```
+
+  Seed a fresh production database the same way with `pnpm db:seed` (it replaces all catalog data, so only on an empty database) and `pnpm settings:*`. Check the `Seeding ep-…` host line before trusting a script's target.
+
 # Project structure
 
 ```
-src/app/               Routes (App Router): / (home), /products/[slug], /design-system
+src/app/               Routes (App Router): / (home), /shop, /shop/[category], /collections/[slug],
+                       /search, /products/[slug], /design-system; sitemap.ts, robots.ts,
+                       opengraph-image.tsx, not-found.tsx
 src/content/home.ts    Editorial homepage content (hero, tiles, mosaic, banner, section titles)
 src/app/api/health/    GET — database connectivity check
 src/app/fonts.ts       Font definitions (all self-hosted)
@@ -326,10 +344,16 @@ src/components/ui/     Reusable design primitives
 src/components/layout/ Header, header frame, mobile menu, footer, icons, nav data
 src/components/product/ Product card + product details (pdp/*)
 src/components/home/   Homepage sections (promo tiles, mosaic, CTA banner)
+src/components/listing/ Listing view, filter panel/drawer, active filters, sort, pagination, skeletons
+src/components/search/ GET search form (works without JS)
+src/components/seo/    Escaped JSON-LD helper + BreadcrumbList builder
 src/db/index.ts        Drizzle client (server-only, lazy)
 src/db/schema.ts       Drizzle table definitions
-src/db/queries/        Cached, server-only reads (catalog, settings, tags, DTO types)
+src/db/queries/        Server-only reads: catalog + settings (`use cache`), listing + search
+                       (`use cache: remote`), mappers, tags, DTO types
 src/lib/env.ts         Server-only env access (throws on missing vars)
+src/lib/listing.ts     Search-param schema (Zod), in-memory filter/sort/paginate, facet + link helpers
+src/lib/site.ts        Site URL/name/description, absoluteUrl()
 src/lib/money.ts       USD cents + LRD formatting
 src/lib/phone.ts       Liberian phone normalisation (E.164) and wa.me digits
 cache-handlers/        Upstash "use cache: remote" handler + Redis key layout
@@ -348,8 +372,11 @@ Canonical list lives in `.env.example`. Copy it to `.env` (git-ignored). Only `N
 | `UPSTASH_REDIS_REST_URL` | Upstash Redis REST URL (remote cache; rate limiting later) | server only |
 | `UPSTASH_REDIS_REST_TOKEN` | Upstash **read-write** REST token (the read-only token fails) | server only |
 | `CACHE_NAMESPACE` | Redis key namespace per environment/database: `local`, `preview`, `production` | server only |
+| `NEXT_PUBLIC_SITE_URL` | Public site URL for `metadataBase`, canonical URLs, Open Graph, sitemap and JSON-LD (`src/lib/site.ts`). Falls back to `VERCEL_PROJECT_PRODUCTION_URL`, then `http://localhost:3000`. | public |
 
 Keep this table and `.env.example` in sync when variables change.
+
+If Upstash is slow from your network (calls past the handler's 1.5s timeout log `[cache] … timed out` and every request becomes a cache miss), leave the two `UPSTASH_*` variables unset locally: `next.config.ts` then uses the in-memory cache. Production on Vercel is unaffected.
 
 # API route method rules
 

@@ -13,7 +13,8 @@ export function SortMenu({ pathname, params, featuredLabel = "Featured" }: {
   const current = sortOptions.find((o) => o.value === params.sort) ?? sortOptions[0];
 
   return (
-    <details className="group relative">
+    // Keyed by URL: after a sort link navigates, React mounts a fresh (closed) <details>.
+    <details key={listingHref(pathname, params)} className="group relative">
       <summary className="btn btn-outline btn-sm btn-pill cursor-pointer list-none [&::-webkit-details-marker]:hidden">
         Sort: {labelFor(current.value, current.label)}
         <span aria-hidden className="transition-transform group-open:rotate-180">▾</span>
