@@ -15,6 +15,13 @@
       "when": 1791885193080,
       "tag": "0001_complete_warlock",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792023252288,
+      "tag": "0002_amused_lightspeed",
+      "breakpoints": true
     }
   ]
 }

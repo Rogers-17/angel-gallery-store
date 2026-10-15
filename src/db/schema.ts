@@ -161,6 +161,39 @@ export const productImages = pgTable(
   (table) => [index("product_images_product_idx").on(table.productId)],
 );
 
+// ── Cart (guest-first; found through the signed `ag_cart` cookie) ──────
+
+export const carts = pgTable(
+  "carts",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    /** Sliding expiry: pushed 30 days ahead on every change. Expired carts are ignored and cleaned up. */
+    expiresAt: timestamp({ withTimezone: true }).notNull(),
+    ...timestamps,
+  },
+  (table) => [index("carts_expires_at_idx").on(table.expiresAt)],
+);
+
+/** One line per variant. No prices: they are always read live from product_variants. */
+export const cartItems = pgTable(
+  "cart_items",
+  {
+    cartId: uuid()
+      .notNull()
+      .references(() => carts.id, { onDelete: "cascade" }),
+    variantId: uuid()
+      .notNull()
+      .references(() => productVariants.id, { onDelete: "cascade" }),
+    quantity: integer().notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    primaryKey({ columns: [table.cartId, table.variantId] }),
+    index("cart_items_variant_idx").on(table.variantId),
+    check("cart_items_quantity_check", sql`${table.quantity} BETWEEN 1 AND 10`),
+  ],
+);
+
 // ── Store settings (single row, id = 1) ────────────────────────────────
 
 export type PaymentMethod = "cash_on_delivery" | "mtn_momo" | "orange_money";
@@ -215,4 +248,13 @@ export const productVariantsRelations = relations(productVariants, ({ one }) => 
 
 export const productImagesRelations = relations(productImages, ({ one }) => ({
   product: one(products, { fields: [productImages.productId], references: [products.id] }),
+}));
+
+export const cartsRelations = relations(carts, ({ many }) => ({
+  items: many(cartItems),
+}));
+
+export const cartItemsRelations = relations(cartItems, ({ one }) => ({
+  cart: one(carts, { fields: [cartItems.cartId], references: [carts.id] }),
+  variant: one(productVariants, { fields: [cartItems.variantId], references: [productVariants.id] }),
 }));

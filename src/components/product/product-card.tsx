@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ProductCardData } from "@/db/queries/types";
-import { Button, ButtonLink } from "@/components/ui/button";
+import { AddToCartButtons } from "@/components/cart/add-to-cart-buttons";
+import { ButtonLink } from "@/components/ui/button";
 import { Media } from "@/components/ui/media";
 import { Price } from "@/components/ui/price";
 import { Tag } from "@/components/ui/tag";
@@ -19,8 +20,8 @@ type ProductCardProps = {
 
 /**
  * Price-first product card: image on a gradient well, price (USD + ≈ LRD) and tag pill, name,
- * two-line summary, then "Add to Cart" (secondary) and "Buy Now" (primary).
- * Add to Cart is visual only until the cart exists (roadmap Phase 3).
+ * two-line summary, then the actions. A single in-stock variant can be added from the card;
+ * anything with options links to the product page ("Choose Options").
  */
 export function ProductCard({ product, lrdPerUsd }: ProductCardProps) {
   const href = productHref(product.slug);
@@ -57,11 +58,19 @@ export function ProductCard({ product, lrdPerUsd }: ProductCardProps) {
       </h3>
       <p className="mt-1 line-clamp-2 text-caption text-muted">{product.summary}</p>
 
-      <div className="mt-auto grid gap-2 pt-4 sm:grid-cols-2">
-        <Button variant="secondary" size="sm" disabled={!product.inStock}>Add to Cart</Button>
-        <ButtonLink href={href} variant="primary" size="sm">
-          {product.inStock ? "Buy Now" : "View"}
-        </ButtonLink>
+      <div className="mt-auto pt-4">
+        {product.singleVariantId ? (
+          <AddToCartButtons variantId={product.singleVariantId} size="sm" className="sm:grid-cols-2" />
+        ) : (
+          <div className="grid gap-2 sm:grid-cols-2">
+            {product.inStock && (
+              <ButtonLink href={href} variant="secondary" size="sm">Choose Options</ButtonLink>
+            )}
+            <ButtonLink href={href} variant="primary" size="sm" className={product.inStock ? undefined : "sm:col-span-2"}>
+              {product.inStock ? "Buy Now" : "View"}
+            </ButtonLink>
+          </div>
+        )}
       </div>
     </article>
   );

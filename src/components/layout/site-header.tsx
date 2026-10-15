@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { CartButton, CartButtonFallback } from "@/components/cart/cart-button";
 import { HeaderFrame } from "./header-frame";
-import { BagIcon, HeartIcon, Monogram, SearchIcon, UserIcon } from "./icons";
+import { HeartIcon, Monogram, SearchIcon, UserIcon } from "./icons";
 import { MobileMenu } from "./mobile-menu";
 import { primaryNav } from "./nav";
 
@@ -33,12 +35,10 @@ export function SiteHeader() {
           <Link href="/search" aria-label="Search" className={iconLink}><SearchIcon /></Link>
           <Link href="#" aria-label="Account" className={`${iconLink} max-md:hidden`}><UserIcon /></Link>
           <Link href="#" aria-label="Wishlist" className={`${iconLink} max-md:hidden`}><HeartIcon /></Link>
-          <Link href="#" aria-label="Bag, 0 items" className={`${iconLink} relative`}>
-            <BagIcon />
-            <span className="absolute top-1 right-1 flex size-4 items-center justify-center rounded-pill bg-primary text-label leading-none text-primary-fg">
-              0
-            </span>
-          </Link>
+          {/* The cart reads a cookie, so it streams in; the fallback keeps the icon in place. */}
+          <Suspense fallback={<CartButtonFallback />}>
+            <CartButton />
+          </Suspense>
         </div>
       </div>
     </HeaderFrame>

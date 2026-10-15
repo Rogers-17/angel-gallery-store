@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { CartUIProvider } from "@/components/cart/cart-ui-provider";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { siteDescription, siteName, siteUrl } from "@/lib/site";
@@ -25,9 +26,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${sans.variable} ${mono.variable} ${fraunces.variable} h-full`}>
       <body className="relative flex min-h-full flex-col">
-        <SiteHeader />
-        {children}
-        <SiteFooter />
+        <CartUIProvider>
+          <SiteHeader />
+          {children}
+          <SiteFooter />
+        </CartUIProvider>
       </body>
     </html>
   );

@@ -40,6 +40,7 @@ export function toCard(product: ProductRow, variants: VariantRow[], images: Imag
     compareAtCents: cheapest?.compareAtCents ?? null,
     inStock: variants.some((v) => v.stock > 0),
     image: images[0] ? toImage(images[0]) : null,
+    singleVariantId: variants.length === 1 && variants[0].stock > 0 ? variants[0].id : null,
   };
 }
 

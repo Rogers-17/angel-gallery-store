@@ -8,7 +8,8 @@ type PriceProps = {
   compareAtCents?: number | null;
   /** Liberian dollars per 1 USD; omit to hide the LRD line. */
   lrdPerUsd?: number;
-  size?: "card" | "pdp";
+  /** "line": compact, for cart line items. */
+  size?: "card" | "pdp" | "line";
   className?: string;
 };
 
@@ -18,7 +19,12 @@ export function Price({ cents, compareAtCents, lrdPerUsd, size = "card", classNa
 
   return (
     <div className={cn("flex flex-col", className)}>
-      <p className={cn("font-semibold tabular-nums", size === "pdp" ? "text-h3 font-sans" : "text-price")}>
+      <p
+        className={cn(
+          "tabular-nums",
+          size === "pdp" ? "text-h3 font-sans font-semibold" : size === "line" ? "text-small" : "text-price font-semibold",
+        )}
+      >
         <span className={cn(onSale && "text-primary")}>{formatUsd(cents)}</span>
         {onSale && (
           <>

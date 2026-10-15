@@ -32,6 +32,8 @@ export type ProductCardData = {
   compareAtCents: number | null;
   inStock: boolean;
   image: ImageData | null;
+  /** Set when the product has exactly one variant and it's in stock, so cards can add it directly. */
+  singleVariantId: string | null;
 };
 
 export type ProductDetail = ProductCardData & {
@@ -70,5 +72,34 @@ export type ListingItem = ProductCardData & {
   position: number;
 };
 
-export type CategoryData = { id: string; slug: string; name: string; description: string | null };
+/** One cart line, priced from the live variant (carts store no prices). */
+export type CartLine = {
+  variantId: string;
+  productSlug: string;
+  productName: string;
+  image: ImageData | null;
+  color: string;
+  size: string;
+  sku: string;
+  /** Current USD cents. */
+  unitPriceCents: number;
+  compareAtCents: number | null;
+  quantity: number;
+  /** min(stock, MAX_LINE_QUANTITY); 0 when unavailable. */
+  maxQuantity: number;
+  /** Product is active and the variant has stock. */
+  available: boolean;
+  /** unit × min(quantity, maxQuantity); 0 when unavailable. */
+  lineTotalCents: number;
+};
+
+export type CartView = {
+  lines: CartLine[];
+  /** Sum of line quantities (header badge). */
+  itemCount: number;
+  /** USD cents over available lines, each counted up to its stock. */
+  subtotalCents: number;
+};
+
+export type CategoryData ={ id: string; slug: string; name: string; description: string | null };
 export type CollectionData = { id: string; slug: string; name: string; description: string | null };

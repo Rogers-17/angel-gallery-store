@@ -6,8 +6,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      // Search results and internal APIs aren't useful in search engines.
-      disallow: ["/api/", "/search"],
+      // Search results, the per-visitor bag and internal APIs aren't useful in search engines.
+      disallow: ["/api/", "/search", "/cart"],
     },
     sitemap: absoluteUrl("/sitemap.xml"),
   };

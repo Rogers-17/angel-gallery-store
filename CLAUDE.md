@@ -63,6 +63,7 @@ Use:
 - Data rendered into the static shell (catalog, settings) uses `"use cache"` + explicit `cacheLife` + `cacheTag` (tags in `src/db/queries/tags.ts`). Mutations invalidate with `updateTag()`.
 - Request-time data (inside Suspense, or depending on `searchParams`, cookies or headers; e.g. Phase 2 filters/search) uses `"use cache: remote"`, stored in Upstash when `UPSTASH_REDIS_REST_*` is set (in-memory otherwise).
 - Never use `"use cache: remote"` for static-shell data: network calls inside the cache handler never resolve during prerendering. The handler times out each Redis call (1.5s) so a stall becomes a cache miss, not a hang.
+- Per-visitor data (the cart; accounts from Phase 5) is never cached across requests: read it at request time inside `<Suspense>` (deduped per request with React `cache`) and never put its ids in cache keys or tags. After a mutation, call `refresh()` in the Server Action.
 
 Build features in the order of the **Implementation roadmap** below and keep its checkboxes up to date. There is no online payment gateway: orders are placed on the site and completed over WhatsApp, with payment off-app (see the roadmap rules).
 
@@ -88,7 +89,7 @@ Warm, bold storefront (the client-approved "design B"): white canvas, espresso i
 - Fonts are self-hosted (`src/app/fonts.ts`). Never use `next/font/google`.
 - The store shell (header, footer) is in the root layout. The header is transparent over the homepage hero and solid elsewhere (`header-frame.tsx`).
 - `src/app/_data/catalog.ts` is temporary demo data; replace with Drizzle queries when products exist. Demo photos (Unsplash, credited in `public/images/demo/CREDITS.md`) are self-hosted; render images through `Media` (`next/image`). Never hot-link external image hosts.
-- Cart, wishlist, newsletter and hero arrows are visual only until those features are built. `/design-b` URLs redirect to `/` (`next.config.ts`).
+- Wishlist, newsletter and hero arrows are visual only until those features are built. `/design-b` URLs redirect to `/` (`next.config.ts`).
 
 # Implementation roadmap
 
@@ -180,14 +181,16 @@ Goal: a real catalog in Neon replaces `src/app/_data/catalog.ts`.
 - [x] SEO: per-page metadata and Open Graph images, Product JSON-LD (USD price, availability), `sitemap.ts`, `robots.ts`, canonical URLs. (fc3b4d7)
 - [x] Loading, empty and not-found states for every listing. Unknown slugs render the not-found page with status 200 + `noindex` (streaming has started; a real 404 would cost the instant App Shell). (fc3b4d7)
 
-## Phase 3: Cart (guest-first)
+## Phase 3: Cart (guest-first) ✅
 
-- [ ] `carts` + `cart_items` tables. The cart ID lives in an httpOnly, signed cookie, so guests get a persistent cart with no account.
-- [ ] Server actions to add, update quantity and remove. Each one checks the variant exists, is active and is in stock, and caps quantities.
-- [ ] Cart drawer (header bag icon with live count) and a `/cart` page:
+- [x] `carts` + `cart_items` tables. The cart ID lives in an httpOnly, signed cookie (`ag_cart`, HMAC with `CART_COOKIE_SECRET`), so guests get a persistent cart with no account. Lines store no prices.
+- [x] Server actions to add, update quantity and remove (`src/app/actions/cart.ts`). Each one checks the variant exists, is active and is in stock, and caps quantities (≤ stock, ≤ 10 per line, ≤ 30 lines).
+- [x] Cart drawer (header bag icon with live count) and a `/cart` page:
   - subtotal in USD + ≈ LRD, recomputed on the server
   - "Delivery fee: agreed on WhatsApp" line
-- [ ] Cart expiry (e.g. 30 days) and cleanup.
+  - checkout button disabled ("Checkout opens soon") until Phase 4
+  - product cards: "Choose Options" → product page; single-variant products add from the card
+- [x] Cart expiry (sliding 30 days) and cleanup: a batch of expired carts is swept after each new cart (`after()`), plus `pnpm carts:cleanup`.
 
 ## Phase 4: Checkout & WhatsApp order hand-off (core flow)
 
@@ -243,7 +246,7 @@ Goal: a real catalog in Neon replaces `src/app/_data/catalog.ts`.
 - [ ] **Customer auth UI** in the design system: sign up, sign in, sign out, forgot/reset password, email verification.
 - [ ] **`customers` profile table** linked to `neon_auth.user.id` (WhatsApp phone, default delivery address). Account pages: profile, saved addresses, order history, order detail.
 - [ ] **Claim guest orders:** after sign-up or sign-in, offer to attach past guest orders that match the verified email or phone.
-- [ ] Merge the guest cart into the account on sign-in, and prefill checkout from the profile.
+- [ ] Merge the guest cart into the account on sign-in (add `carts.customer_id`), and prefill checkout from the profile.
 - [ ] **Single admin:**
   - the admin is the Neon Auth user whose **verified** email matches the server-only `ADMIN_EMAIL` env var
   - there is no admin sign-up flow
@@ -301,6 +304,7 @@ Goal: a real catalog in Neon replaces `src/app/_data/catalog.ts`.
   - a Neon production branch with preview branches (auth state and storage branch with the database); a Preview `DATABASE_URL` (none yet, so preview builds fail)
   - `CACHE_NAMESPACE` per environment: `production` for Production, `preview` for Preview (currently one shared value)
   - run `pnpm db:migrate` automatically on deploy (today it's manual; see "Production database")
+  - a scheduled expired-cart cleanup (Vercel Cron), replacing the opportunistic sweep
   - custom domain, backups and point-in-time restore
 - [ ] Replace the demo photos and catalog with real content; remove the `/design-b` redirects.
 
@@ -308,8 +312,9 @@ Goal: a real catalog in Neon replaces `src/app/_data/catalog.ts`.
 
 Neon Postgres is the source of truth for app data. All database access goes through Drizzle.
 
-- Tables are defined in `src/db/schema.ts` (catalog + `store_settings`). Column names are camelCase in TS and snake_case in SQL (`casing: "snake_case"` in the client, scripts and `drizzle.config.ts`).
-- Read data only through `src/db/queries/*` (server-only, cached, returns plain serializable DTOs from `src/db/queries/types.ts`). Storefront queries return `active` products only.
+- Tables are defined in `src/db/schema.ts` (catalog, `carts` + `cart_items`, `store_settings`). Column names are camelCase in TS and snake_case in SQL (`casing: "snake_case"` in the client, scripts and `drizzle.config.ts`).
+- Read data only through `src/db/queries/*` (server-only, returns plain serializable DTOs from `src/db/queries/types.ts`). Catalog and settings reads are cached; `cart.ts` is request-time. Storefront queries return `active` products only.
+- Writes go through `src/db/mutations/*` (server-only), called from thin Server Actions in `src/app/actions/*` that validate input with Zod and derive identity server-side (the cart from the signed cookie, never from the client).
 - Money is integer USD cents (`src/lib/money.ts` formats USD and ≈ LRD). Phone numbers go through `src/lib/phone.ts` (E.164 `+231…`).
 - CLI scripts (`scripts/*`) use their own client (`scripts/db.ts`): `src/db/index.ts` is `server-only` and can't load outside Next.
 - Get the client with `getDb()` from `@/db`. It is created lazily so builds do not need `DATABASE_URL`.
@@ -334,8 +339,9 @@ Neon Postgres is the source of truth for app data. All database access goes thro
 
 ```
 src/app/               Routes (App Router): / (home), /shop, /shop/[category], /collections/[slug],
-                       /search, /products/[slug], /design-system; sitemap.ts, robots.ts,
+                       /search, /products/[slug], /cart, /design-system; sitemap.ts, robots.ts,
                        opengraph-image.tsx, not-found.tsx
+src/app/actions/       Server Actions ("use server"): cart add / buy now / update / remove
 src/content/home.ts    Editorial homepage content (hero, tiles, mosaic, banner, section titles)
 src/app/api/health/    GET — database connectivity check
 src/app/fonts.ts       Font definitions (all self-hosted)
@@ -347,10 +353,14 @@ src/components/home/   Homepage sections (promo tiles, mosaic, CTA banner)
 src/components/listing/ Listing view, filter panel/drawer, active filters, sort, pagination, skeletons
 src/components/search/ GET search form (works without JS)
 src/components/seo/    Escaped JSON-LD helper + BreadcrumbList builder
+src/components/cart/   Cart UI provider (drawer state), header bag + drawer, line items, summary,
+                       Add to Cart / Buy Now buttons
 src/db/index.ts        Drizzle client (server-only, lazy)
 src/db/schema.ts       Drizzle table definitions
 src/db/queries/        Server-only reads: catalog + settings (`use cache`), listing + search
-                       (`use cache: remote`), mappers, tags, DTO types
+                       (`use cache: remote`), cart (request-time), mappers, tags, DTO types
+src/db/mutations/      Server-only writes (cart)
+src/lib/cart/          Cart cookie signing (server-only) and shared limits
 src/lib/env.ts         Server-only env access (throws on missing vars)
 src/lib/listing.ts     Search-param schema (Zod), in-memory filter/sort/paginate, facet + link helpers
 src/lib/site.ts        Site URL/name/description, absoluteUrl()
@@ -372,6 +382,7 @@ Canonical list lives in `.env.example`. Copy it to `.env` (git-ignored). Only `N
 | `UPSTASH_REDIS_REST_URL` | Upstash Redis REST URL (remote cache; rate limiting later) | server only |
 | `UPSTASH_REDIS_REST_TOKEN` | Upstash **read-write** REST token (the read-only token fails) | server only |
 | `CACHE_NAMESPACE` | Redis key namespace per environment/database: `local`, `preview`, `production` | server only |
+| `CART_COOKIE_SECRET` | HMAC key signing the `ag_cart` cookie; ≥ 32 random chars, different per environment. Generate: `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"`. Rotating it empties existing carts. | server only |
 | `NEXT_PUBLIC_SITE_URL` | Public site URL for `metadataBase`, canonical URLs, Open Graph, sitemap and JSON-LD (`src/lib/site.ts`). Falls back to `VERCEL_PROJECT_PRODUCTION_URL`, then `http://localhost:3000`. | public |
 
 Keep this table and `.env.example` in sync when variables change.
@@ -417,6 +428,7 @@ Database:
 - `pnpm db:seed` — replace all catalog data with the demo catalog; creates settings if missing (`--reset-settings` overwrites them)
 - `pnpm settings:rate 172.5` — set the LRD per USD rate
 - `pnpm settings:whatsapp +231…` — set the admin WhatsApp number
+- `pnpm carts:cleanup` — delete expired carts
 - Scripts refuse to run with `NODE_ENV=production` unless `--force` is passed. After a script change, restart `pnpm dev` (or redeploy) to refresh prerendered pages.
 
 Development and runtime:

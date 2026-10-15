@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { VariantData } from "@/db/queries/types";
+import { AddToCartButtons } from "@/components/cart/add-to-cart-buttons";
 import { HeartIcon } from "@/components/layout/icons";
 import { Button } from "@/components/ui/button";
 import { Price } from "@/components/ui/price";
@@ -26,8 +27,8 @@ function stockLabel(stock: number) {
 }
 
 /**
- * Colour + size selection driven by real variants. Price, stock, SKU and the actions follow
- * the selected variant. Cart actions stay visual until roadmap Phase 3.
+ * Colour + size selection driven by real variants. Price, stock, SKU, quantity and the cart
+ * actions follow the selected variant; the server re-checks stock when adding.
  */
 export function VariantPicker({ variants, lrdPerUsd }: VariantPickerProps) {
   const colors = useMemo(() => uniqueBy(variants, (v) => v.color), [variants]);
@@ -41,12 +42,14 @@ export function VariantPicker({ variants, lrdPerUsd }: VariantPickerProps) {
   const initial = variants.find((v) => v.stock > 0) ?? variants[0];
   const [color, setColor] = useState(initial.color);
   const [size, setSize] = useState(initial.size);
+  const [quantity, setQuantity] = useState(1);
   const selected = find(color, size) ?? firstAvailable(color) ?? initial;
   const soldOut = selected.stock <= 0;
   const stock = stockLabel(selected.stock);
 
   function chooseColor(next: string) {
     setColor(next);
+    setQuantity(1);
     const keep = find(next, size);
     if (!keep || keep.stock <= 0) {
       const fallback = firstAvailable(next);
@@ -114,7 +117,10 @@ export function VariantPicker({ variants, lrdPerUsd }: VariantPickerProps) {
                 type="button"
                 aria-pressed={active}
                 disabled={unavailable}
-                onClick={() => setSize(option)}
+                onClick={() => {
+                  setSize(option);
+                  setQuantity(1);
+                }}
                 className={cn(
                   "flex h-11 items-center justify-center rounded-control border text-small transition-colors",
                   active ? "border-ink bg-ink text-paper" : "border-line hover:border-line-strong",
@@ -129,14 +135,18 @@ export function VariantPicker({ variants, lrdPerUsd }: VariantPickerProps) {
         </div>
       </fieldset>
 
-      <Quantity key={selected.id} max={selected.stock} disabled={soldOut} />
+      <Quantity value={quantity} onChange={setQuantity} max={selected.stock} disabled={soldOut} />
 
-      {/* Visual only until the cart exists (roadmap Phase 3). */}
-      <div className="flex gap-2">
-        <div className="grid flex-1 gap-2 sm:grid-cols-2">
-          <Button variant="secondary" size="lg" disabled={soldOut}>Add to Cart</Button>
-          <Button variant="primary" size="lg" disabled={soldOut}>{soldOut ? "Sold Out" : "Buy Now"}</Button>
+      <div className="flex items-start gap-2">
+        <div className="flex-1">
+          <AddToCartButtons
+            variantId={soldOut ? null : selected.id}
+            quantity={Math.min(quantity, Math.max(1, selected.stock))}
+            soldOut={soldOut}
+            className="sm:grid-cols-2"
+          />
         </div>
+        {/* Wishlist is visual only until roadmap Phase 8. */}
         <Button variant="secondary" size="lg" aria-label="Add to wishlist" className="w-14 shrink-0 px-0!">
           <HeartIcon />
         </Button>
