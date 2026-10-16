@@ -24,5 +24,6 @@ export async function getStoreSettings(): Promise<StoreSettingsData> {
     paymentInstructions: row.paymentInstructions,
     contactEmail: row.contactEmail,
     contactPhone: row.contactPhone,
+    orderMessageTemplate: row.orderMessageTemplate,
   };
 }

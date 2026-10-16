@@ -84,7 +84,7 @@ export function CartDrawer({ cart, lrdPerUsd }: { cart: CartView | null; lrdPerU
               <CartLines lines={lines} lrdPerUsd={lrdPerUsd} onNavigate={close} />
             </div>
             <div className="hairline shrink-0 border-t bg-paper px-gutter py-5">
-              <CartSummary subtotalCents={cart?.subtotalCents ?? 0} lrdPerUsd={lrdPerUsd}>
+              <CartSummary subtotalCents={cart?.subtotalCents ?? 0} lrdPerUsd={lrdPerUsd} onNavigate={close}>
                 <ButtonLink href="/cart" variant="secondary" size="md" fullWidth onClick={close}>
                   View bag
                 </ButtonLink>

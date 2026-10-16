@@ -10,6 +10,7 @@ import {
   jsonb,
   numeric,
   pgEnum,
+  pgSequence,
   pgTable,
   primaryKey,
   text,
@@ -32,6 +33,26 @@ export const productStatus = pgEnum("product_status", ["draft", "active", "archi
 export const productBadge = pgEnum("product_badge", ["new", "bestseller"]);
 /** Who a product is for. "unisex" products appear under both Women and Men. */
 export const productAudience = pgEnum("product_audience", ["women", "men", "unisex"]);
+
+/** How the buyer prefers to pay. Payment always happens off the app. */
+export const paymentMethod = pgEnum("payment_method", ["cash_on_delivery", "mtn_momo", "orange_money"]);
+export const fulfilmentMethod = pgEnum("fulfilment_method", ["delivery", "pickup"]);
+/** Order lifecycle. Part 1 of Phase 4 only creates `pending`; the admin workflow arrives in Phase 6. */
+export const orderStatus = pgEnum("order_status", [
+  "pending",
+  "confirmed",
+  "awaiting_payment",
+  "paid",
+  "processing",
+  "out_for_delivery",
+  "delivered",
+  "cancelled",
+  "refunded",
+]);
+export const orderActor = pgEnum("order_actor", ["customer", "admin", "system"]);
+
+/** Order numbers: AG-1001, AG-1002, … (guessable, so never enough on their own to see an order). */
+export const orderNumberSeq = pgSequence("order_number_seq", { startWith: 1001 });
 
 /** Postgres full-text search vector (read-only, generated). */
 const tsvector = customType<{ data: string }>({
@@ -196,7 +217,7 @@ export const cartItems = pgTable(
 
 // ── Store settings (single row, id = 1) ────────────────────────────────
 
-export type PaymentMethod = "cash_on_delivery" | "mtn_momo" | "orange_money";
+export type PaymentMethod = (typeof paymentMethod.enumValues)[number];
 export type PaymentInstructions = Record<PaymentMethod, { label: string; instructions: string }>;
 
 export const storeSettings = pgTable(
@@ -217,6 +238,141 @@ export const storeSettings = pgTable(
   (table) => [
     check("store_settings_singleton_check", sql`${table.id} = 1`),
     check("store_settings_rate_check", sql`${table.lrdPerUsd} > 0`),
+  ],
+);
+
+// ── Orders (saved before the WhatsApp hand-off; the source of truth) ────
+
+export const orders = pgTable(
+  "orders",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    /** "AG-1001", from order_number_seq. */
+    number: text().notNull().unique(),
+    status: orderStatus().notNull().default("pending"),
+    /** Neon Auth user id once accounts exist (Phase 5). Null for guests. */
+    customerId: text(),
+    customerName: text().notNull(),
+    /** E.164, e.g. +231770123456. */
+    whatsappPhone: text().notNull(),
+    email: text(),
+    fulfilment: fulfilmentMethod().notNull(),
+    deliveryArea: text(),
+    deliveryStreet: text(),
+    deliveryLandmark: text(),
+    deliveryNotes: text(),
+    paymentMethod: paymentMethod().notNull(),
+    /** USD cents, recomputed from the database at placement. */
+    subtotalCents: integer().notNull(),
+    /** USD cents agreed on WhatsApp; null until the admin enters it. */
+    deliveryFeeCents: integer(),
+    /** subtotal + delivery fee (USD cents). */
+    totalCents: integer().notNull(),
+    currency: text().notNull().default("USD"),
+    /** Snapshot of the LRD per USD rate when the order was placed. */
+    lrdPerUsd: numeric({ precision: 10, scale: 4, mode: "number" }).notNull(),
+    /** SHA-256 (hex) of the guest access token. The token itself is never stored. */
+    accessTokenHash: text().notNull(),
+    /** Random key rendered into the checkout form, so a resubmit can't create a second order. */
+    idempotencyKey: text().notNull().unique(),
+    whatsappConsentAt: timestamp({ withTimezone: true }).notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    index("orders_status_idx").on(table.status),
+    index("orders_created_at_idx").on(table.createdAt),
+    index("orders_whatsapp_phone_idx").on(table.whatsappPhone),
+    index("orders_customer_idx").on(table.customerId),
+    check("orders_subtotal_check", sql`${table.subtotalCents} >= 0`),
+    check("orders_delivery_fee_check", sql`${table.deliveryFeeCents} IS NULL OR ${table.deliveryFeeCents} >= 0`),
+    check(
+      "orders_total_check",
+      sql`${table.totalCents} = ${table.subtotalCents} + coalesce(${table.deliveryFeeCents}, 0)`,
+    ),
+    check("orders_currency_check", sql`${table.currency} = 'USD'`),
+    check("orders_rate_check", sql`${table.lrdPerUsd} > 0`),
+    check(
+      "orders_delivery_address_check",
+      sql`${table.fulfilment} <> 'delivery' OR (${table.deliveryArea} IS NOT NULL AND ${table.deliveryLandmark} IS NOT NULL)`,
+    ),
+  ],
+);
+
+/** Line items snapshotted at placement, so later catalog edits never change an order. */
+export const orderItems = pgTable(
+  "order_items",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    orderId: uuid()
+      .notNull()
+      .references(() => orders.id, { onDelete: "cascade" }),
+    variantId: uuid().references(() => productVariants.id, { onDelete: "set null" }),
+    productId: uuid().references(() => products.id, { onDelete: "set null" }),
+    productName: text().notNull(),
+    productSlug: text().notNull(),
+    sku: text().notNull(),
+    color: text().notNull(),
+    size: text().notNull(),
+    /** USD cents. */
+    unitPriceCents: integer().notNull(),
+    compareAtCents: integer(),
+    quantity: integer().notNull(),
+    /** unit × quantity (USD cents). */
+    lineTotalCents: integer().notNull(),
+    imageUrl: text(),
+    imageAlt: text(),
+    position: integer().notNull().default(0),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("order_items_order_idx").on(table.orderId),
+    check("order_items_quantity_check", sql`${table.quantity} BETWEEN 1 AND 10`),
+    check("order_items_price_check", sql`${table.unitPriceCents} >= 0`),
+    check("order_items_line_total_check", sql`${table.lineTotalCents} = ${table.unitPriceCents} * ${table.quantity}`),
+  ],
+);
+
+/** Status history: every change, with who made it. */
+export const orderEvents = pgTable(
+  "order_events",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    orderId: uuid()
+      .notNull()
+      .references(() => orders.id, { onDelete: "cascade" }),
+    fromStatus: orderStatus(),
+    toStatus: orderStatus().notNull(),
+    actor: orderActor().notNull(),
+    actorId: text(),
+    note: text(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("order_events_order_idx").on(table.orderId, table.createdAt)],
+);
+
+/** Payments received off the app, recorded by the admin (Phase 6). */
+export const payments = pgTable(
+  "payments",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    orderId: uuid()
+      .notNull()
+      .references(() => orders.id, { onDelete: "restrict" }),
+    method: paymentMethod().notNull(),
+    /** USD cents credited to the order. */
+    amountCents: integer().notNull(),
+    /** Liberian dollars received, when paid in LRD. */
+    amountLrd: numeric({ precision: 12, scale: 2, mode: "number" }),
+    /** Mobile-money transaction ID, if any. */
+    transactionRef: text(),
+    receivedAt: timestamp({ withTimezone: true }).notNull(),
+    notes: text(),
+    recordedBy: text(),
+    ...timestamps,
+  },
+  (table) => [
+    index("payments_order_idx").on(table.orderId),
+    check("payments_amount_check", sql`${table.amountCents} > 0`),
   ],
 );
 
@@ -257,4 +413,22 @@ export const cartsRelations = relations(carts, ({ many }) => ({
 export const cartItemsRelations = relations(cartItems, ({ one }) => ({
   cart: one(carts, { fields: [cartItems.cartId], references: [carts.id] }),
   variant: one(productVariants, { fields: [cartItems.variantId], references: [productVariants.id] }),
+}));
+
+export const ordersRelations = relations(orders, ({ many }) => ({
+  items: many(orderItems),
+  events: many(orderEvents),
+  payments: many(payments),
+}));
+
+export const orderItemsRelations = relations(orderItems, ({ one }) => ({
+  order: one(orders, { fields: [orderItems.orderId], references: [orders.id] }),
+}));
+
+export const orderEventsRelations = relations(orderEvents, ({ one }) => ({
+  order: one(orders, { fields: [orderEvents.orderId], references: [orders.id] }),
+}));
+
+export const paymentsRelations = relations(payments, ({ one }) => ({
+  order: one(orders, { fields: [payments.orderId], references: [orders.id] }),
 }));

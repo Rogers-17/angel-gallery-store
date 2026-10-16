@@ -94,11 +94,11 @@ export async function addToCart(input: { variantId: string; quantity: number }):
   return add(input);
 }
 
-/** Adds a variant, then goes to the bag. (Phase 4: straight to /checkout.) */
+/** Adds a variant, then goes straight to checkout. */
 export async function buyNow(input: { variantId: string; quantity: number }): Promise<CartActionResult> {
   const result = await add(input);
   if (!result.ok) return result;
-  redirect("/cart");
+  redirect("/checkout");
 }
 
 /** Form action: sets a line's quantity (0 removes it), clamped to what's available. */

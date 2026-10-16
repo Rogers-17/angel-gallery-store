@@ -63,7 +63,7 @@ Use:
 - Data rendered into the static shell (catalog, settings) uses `"use cache"` + explicit `cacheLife` + `cacheTag` (tags in `src/db/queries/tags.ts`). Mutations invalidate with `updateTag()`.
 - Request-time data (inside Suspense, or depending on `searchParams`, cookies or headers; e.g. Phase 2 filters/search) uses `"use cache: remote"`, stored in Upstash when `UPSTASH_REDIS_REST_*` is set (in-memory otherwise).
 - Never use `"use cache: remote"` for static-shell data: network calls inside the cache handler never resolve during prerendering. The handler times out each Redis call (1.5s) so a stall becomes a cache miss, not a hang.
-- Per-visitor data (the cart; accounts from Phase 5) is never cached across requests: read it at request time inside `<Suspense>` (deduped per request with React `cache`) and never put its ids in cache keys or tags. After a mutation, call `refresh()` in the Server Action.
+- Per-visitor data (the cart, orders; accounts from Phase 5) is never cached across requests: read it at request time inside `<Suspense>` (deduped per request with React `cache`) and never put its ids in cache keys or tags. After a mutation, call `refresh()` in the Server Action.
 
 Build features in the order of the **Implementation roadmap** below and keep its checkboxes up to date. There is no online payment gateway: orders are placed on the site and completed over WhatsApp, with payment off-app (see the roadmap rules).
 
@@ -194,7 +194,12 @@ Goal: a real catalog in Neon replaces `src/app/_data/catalog.ts`.
 
 ## Phase 4: Checkout & WhatsApp order hand-off (core flow)
 
-- [ ] **Order tables:**
+Built in two parts:
+
+- **Part 1** (`prompts/phase-4-part-1-checkout.md`): order tables, `/checkout`, `placeOrder`, the WhatsApp builder, the confirmation page, abuse protection, the inventory policy.
+- **Part 2:** order lookup and tests.
+
+- [x] **Order tables:**
   - `orders`:
     - number like `AG-1027`, status, optional `customer_id`
     - contact: full name, WhatsApp phone, optional email
@@ -205,32 +210,35 @@ Goal: a real catalog in Neon replaces `src/app/_data/catalog.ts`.
   - `order_items`: snapshot of name, variant label, sku, unit price, quantity, line total, image
   - `order_events`: status history with actor and note
   - `payments`
-- [ ] **`/checkout`** for guests and signed-in users:
+- [x] **`/checkout`** for guests (signed-in prefill arrives with Phase 5):
   - contact details, with the WhatsApp phone required, validated and normalised to `+231…`
   - delivery or pickup, and address details for delivery
   - preferred payment method (3 options, with a short explanation of each)
   - consent to be contacted on WhatsApp
   - Zod validation; signed-in users are prefilled from their profile
   - the summary shows subtotal (USD + ≈ LRD) and "Delivery fee: agreed on WhatsApp"
-- [ ] **`placeOrder` server action** (use the `drizzle-orm/neon-serverless` WebSocket driver for a real transaction; the HTTP driver only supports batches):
+- [x] **`placeOrder` server action** (use the `drizzle-orm/neon-serverless` WebSocket driver for a real transaction; the HTTP driver only supports batches):
   - an idempotency key so a double submit can't create two orders
   - re-read prices and stock from the database and compute the subtotal
   - snapshot the line items and the LRD rate
   - create the order as `pending` with an order number and a guest access token (store only its hash)
   - clear the cart
-- [ ] **WhatsApp message builder** (server-side, from the settings template):
+- [x] **WhatsApp message builder** (server-side, from the settings template):
   - contents: order number, items (variant, quantity, price), subtotal in USD and ≈ LRD, fulfilment and address/landmark, preferred payment method, customer name and phone, and the admin link to the order
   - output: `https://wa.me/<admin-number>?text=<encoded>`, kept under URL length limits (summarise long orders)
-- [ ] **Order confirmation page** (`/orders/[number]?token=…`):
+- [x] **Order confirmation page** (`/orders/[number]?token=…`):
   - a large "Send order on WhatsApp" primary button
   - the order summary
   - the next steps: chat with the admin, agree the delivery fee, pay by your chosen method
   - USSD payment steps for the chosen method, from settings
   - the current order status
-- [ ] **Order lookup** (`/orders/lookup`): order number + phone, for buyers who lose the link.
-- [ ] **Abuse protection** on guest checkout: rate limits per IP and phone (`@upstash/ratelimit` on the existing Upstash database), a honeypot field (add Cloudflare Turnstile if spam appears), quantity limits.
-- [ ] **Inventory policy:** stock is committed when the admin confirms the order (not at placement) and released if it's cancelled. Show availability honestly.
-- [ ] **Tests:** unit tests for money/LRD conversion, phone normalisation and the WhatsApp message builder; an end-to-end test of guest checkout.
+- [ ] **Order lookup** (`/orders/lookup`, Part 2): order number + phone, for buyers who lose the link. It gets its own rate limit.
+- [x] **Abuse protection** on guest checkout: rate limits per IP and phone (`@upstash/ratelimit` on the existing Upstash database), a honeypot field (add Cloudflare Turnstile if spam appears), quantity limits.
+- [x] **Inventory policy:**
+  - placement re-checks stock and refuses changed bags, but does not decrement stock
+  - stock is committed when the admin confirms the order and released if it's cancelled (built in Phase 6)
+  - availability is shown honestly
+- [ ] **Tests** (Part 2): unit tests for money/LRD conversion, phone normalisation and the WhatsApp message builder; an end-to-end test of guest checkout.
 
 ## Phase 5: Authentication (Neon Auth, managed Better Auth)
 
@@ -312,9 +320,25 @@ Goal: a real catalog in Neon replaces `src/app/_data/catalog.ts`.
 
 Neon Postgres is the source of truth for app data. All database access goes through Drizzle.
 
-- Tables are defined in `src/db/schema.ts` (catalog, `carts` + `cart_items`, `store_settings`). Column names are camelCase in TS and snake_case in SQL (`casing: "snake_case"` in the client, scripts and `drizzle.config.ts`).
-- Read data only through `src/db/queries/*` (server-only, returns plain serializable DTOs from `src/db/queries/types.ts`). Catalog and settings reads are cached; `cart.ts` is request-time. Storefront queries return `active` products only.
-- Writes go through `src/db/mutations/*` (server-only), called from thin Server Actions in `src/app/actions/*` that validate input with Zod and derive identity server-side (the cart from the signed cookie, never from the client).
+- Tables are defined in `src/db/schema.ts`:
+  - catalog
+  - `carts` + `cart_items`
+  - `orders` + `order_items` + `order_events` + `payments`
+  - `store_settings`
+
+  Column names are camelCase in TS and snake_case in SQL (`casing: "snake_case"` in the client, scripts and `drizzle.config.ts`).
+- Read data only through `src/db/queries/*` (server-only, returns plain serializable DTOs from `src/db/queries/types.ts`).
+  - catalog and settings reads are cached
+  - `cart.ts` and `orders.ts` are request-time
+  - storefront queries return `active` products only
+- Writes go through `src/db/mutations/*` (server-only), called from thin Server Actions in `src/app/actions/*`. The actions validate input with Zod and derive identity server-side (the cart from the signed cookie, never from the client).
+- `getDb()` is the neon-http client: reads and batches only. For an interactive transaction, use `withTransaction()` from `src/db/transaction.ts`. It opens a per-call WebSocket `Pool` and closes it when done. Only `placeOrder` needs it.
+- **Orders:**
+  - numbers are `AG-` + `order_number_seq` (from 1001)
+  - order lines are snapshots (name, variant, sku, price, image), so catalog edits never change past orders
+  - guests open an order with `/orders/<number>?token=…`. The token is `HMAC(ORDER_TOKEN_SECRET, idempotency key)`, and only its SHA-256 is stored (`src/lib/orders/token.ts`).
+  - never log buyer details or tokens
+- Rate limits (`src/lib/rate-limit.ts`, `@upstash/ratelimit`) fail open, and they are skipped when Upstash isn't configured.
 - Money is integer USD cents (`src/lib/money.ts` formats USD and ≈ LRD). Phone numbers go through `src/lib/phone.ts` (E.164 `+231…`).
 - CLI scripts (`scripts/*`) use their own client (`scripts/db.ts`): `src/db/index.ts` is `server-only` and can't load outside Next.
 - Get the client with `getDb()` from `@/db`. It is created lazily so builds do not need `DATABASE_URL`.
@@ -339,9 +363,9 @@ Neon Postgres is the source of truth for app data. All database access goes thro
 
 ```
 src/app/               Routes (App Router): / (home), /shop, /shop/[category], /collections/[slug],
-                       /search, /products/[slug], /cart, /design-system; sitemap.ts, robots.ts,
-                       opengraph-image.tsx, not-found.tsx
-src/app/actions/       Server Actions ("use server"): cart add / buy now / update / remove
+                       /search, /products/[slug], /cart, /checkout, /orders/[number], /design-system;
+                       sitemap.ts, robots.ts, opengraph-image.tsx, not-found.tsx
+src/app/actions/       Server Actions ("use server"): cart add / buy now / update / remove; checkout placeOrder
 src/content/home.ts    Editorial homepage content (hero, tiles, mosaic, banner, section titles)
 src/app/api/health/    GET — database connectivity check
 src/app/fonts.ts       Font definitions (all self-hosted)
@@ -355,12 +379,18 @@ src/components/search/ GET search form (works without JS)
 src/components/seo/    Escaped JSON-LD helper + BreadcrumbList builder
 src/components/cart/   Cart UI provider (drawer state), header bag + drawer, line items, summary,
                        Add to Cart / Buy Now buttons
-src/db/index.ts        Drizzle client (server-only, lazy)
+src/components/checkout/ Checkout form (useActionState), choice cards, order summary
+src/components/orders/ WhatsApp button, order status pill
+src/db/index.ts        Drizzle client (server-only, lazy, neon-http)
+src/db/transaction.ts  withTransaction(): per-call WebSocket Pool for interactive transactions
 src/db/schema.ts       Drizzle table definitions
 src/db/queries/        Server-only reads: catalog + settings (`use cache`), listing + search
-                       (`use cache: remote`), cart (request-time), mappers, tags, DTO types
-src/db/mutations/      Server-only writes (cart)
+                       (`use cache: remote`), cart + orders (request-time), mappers, tags, DTO types
+src/db/mutations/      Server-only writes (cart, orders)
 src/lib/cart/          Cart cookie signing (server-only) and shared limits
+src/lib/orders/        Checkout schema (Zod), order token helpers (server-only), labels,
+                       WhatsApp message builder
+src/lib/rate-limit.ts  Upstash rate limits (fail open) + client IP
 src/lib/env.ts         Server-only env access (throws on missing vars)
 src/lib/listing.ts     Search-param schema (Zod), in-memory filter/sort/paginate, facet + link helpers
 src/lib/site.ts        Site URL/name/description, absoluteUrl()
@@ -379,10 +409,11 @@ Canonical list lives in `.env.example`. Copy it to `.env` (git-ignored). Only `N
 | Variable       | Purpose                                         | Exposure    |
 | -------------- | ----------------------------------------------- | ----------- |
 | `DATABASE_URL` | Neon pooled connection string (Drizzle + kit). Use a development branch locally. | server only |
-| `UPSTASH_REDIS_REST_URL` | Upstash Redis REST URL (remote cache; rate limiting later) | server only |
+| `UPSTASH_REDIS_REST_URL` | Upstash Redis REST URL (remote cache, checkout rate limits) | server only |
 | `UPSTASH_REDIS_REST_TOKEN` | Upstash **read-write** REST token (the read-only token fails) | server only |
 | `CACHE_NAMESPACE` | Redis key namespace per environment/database: `local`, `preview`, `production` | server only |
 | `CART_COOKIE_SECRET` | HMAC key signing the `ag_cart` cookie; ≥ 32 random chars, different per environment. Generate: `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"`. Rotating it empties existing carts. | server only |
+| `ORDER_TOKEN_SECRET` | HMAC key deriving guest order-link tokens; ≥ 32 random chars, different per environment (generate like `CART_COOKIE_SECRET`). Rotating it doesn't break existing order links (they're checked against stored hashes). | server only |
 | `NEXT_PUBLIC_SITE_URL` | Public site URL for `metadataBase`, canonical URLs, Open Graph, sitemap and JSON-LD (`src/lib/site.ts`). Falls back to `VERCEL_PROJECT_PRODUCTION_URL`, then `http://localhost:3000`. | public |
 
 Keep this table and `.env.example` in sync when variables change.

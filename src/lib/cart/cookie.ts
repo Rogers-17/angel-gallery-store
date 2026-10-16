@@ -42,3 +42,8 @@ export async function setCartCookie(cartId: string): Promise<void> {
     maxAge: CART_TTL_DAYS * 24 * 60 * 60,
   });
 }
+
+/** Removes the cart cookie (after an order is placed). Server Actions only. */
+export async function clearCartCookie(): Promise<void> {
+  (await cookies()).delete(COOKIE_NAME);
+}

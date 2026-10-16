@@ -16,7 +16,7 @@ type AddToCartButtonsProps = {
   className?: string;
 };
 
-/** "Add to Cart" (opens the drawer) and "Buy Now" (adds, then goes to the bag), with pending and error states. */
+/** "Add to Cart" (opens the drawer) and "Buy Now" (adds, then goes to checkout), with pending and error states. */
 export function AddToCartButtons({ variantId, quantity = 1, soldOut, size = "lg", className }: AddToCartButtonsProps) {
   const { open } = useCartUI();
   const [pending, startTransition] = useTransition();

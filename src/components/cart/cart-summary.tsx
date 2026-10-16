@@ -1,16 +1,18 @@
 import type { ReactNode } from "react";
-import { Button } from "@/components/ui/button";
+import { ButtonLink } from "@/components/ui/button";
 import { formatLrd, formatUsd } from "@/lib/money";
 import { cn } from "@/lib/cn";
 
 /**
  * Subtotal (USD + ≈ LRD), the delivery-fee line and the checkout button. Totals come from the
- * server-computed CartView; the client never sums prices. Checkout is disabled until Phase 4.
+ * server-computed CartView; the client never sums prices.
  */
-export function CartSummary({ subtotalCents, lrdPerUsd, className, children }: {
+export function CartSummary({ subtotalCents, lrdPerUsd, className, onNavigate, children }: {
   subtotalCents: number;
   lrdPerUsd: number;
   className?: string;
+  /** Called when Checkout is followed (the drawer closes itself). */
+  onNavigate?: () => void;
   /** Extra actions or notes under the checkout button. */
   children?: ReactNode;
 }) {
@@ -25,11 +27,9 @@ export function CartSummary({ subtotalCents, lrdPerUsd, className, children }: {
       </div>
       <p className="text-caption text-muted">Delivery fee: agreed on WhatsApp</p>
       <div className="flex flex-col gap-2">
-        {/* Phase 4 replaces this with a link to /checkout. */}
-        <Button variant="primary" size="md" fullWidth disabled>
+        <ButtonLink href="/checkout" variant="primary" size="md" fullWidth onClick={onNavigate}>
           Checkout
-        </Button>
-        <p className="text-center text-caption text-muted">Checkout opens soon</p>
+        </ButtonLink>
         {children}
       </div>
     </div>

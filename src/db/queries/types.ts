@@ -1,5 +1,6 @@
 // Plain, serializable shapes returned by the data-access layer (safe to pass to client components).
-import type { PaymentInstructions } from "../schema";
+import type { Fulfilment, OrderStatus } from "@/lib/orders/labels";
+import type { PaymentInstructions, PaymentMethod } from "../schema";
 
 export type ProductBadge = "new" | "bestseller";
 
@@ -56,6 +57,8 @@ export type StoreSettingsData = {
   paymentInstructions: PaymentInstructions;
   contactEmail: string | null;
   contactPhone: string | null;
+  /** WhatsApp order message with {{placeholders}}; null uses the built-in default. */
+  orderMessageTemplate: string | null;
 };
 
 export type ProductAudience = "women" | "men" | "unisex";
@@ -99,6 +102,42 @@ export type CartView = {
   itemCount: number;
   /** USD cents over available lines, each counted up to its stock. */
   subtotalCents: number;
+};
+
+/** A snapshotted order line (prices as they were at placement). */
+export type OrderLine = {
+  productSlug: string;
+  productName: string;
+  color: string;
+  size: string;
+  sku: string;
+  unitPriceCents: number;
+  quantity: number;
+  lineTotalCents: number;
+  image: ImageData | null;
+};
+
+/** An order as its buyer sees it. Never includes the token hash, idempotency key or customer id. */
+export type OrderView = {
+  number: string;
+  status: OrderStatus;
+  /** ISO timestamp. */
+  placedAt: string;
+  customerName: string;
+  /** E.164. */
+  whatsappPhone: string;
+  email: string | null;
+  fulfilment: Fulfilment;
+  delivery: { area: string; street: string | null; landmark: string; notes: string | null } | null;
+  paymentMethod: PaymentMethod;
+  subtotalCents: number;
+  /** Null until agreed on WhatsApp. */
+  deliveryFeeCents: number | null;
+  totalCents: number;
+  /** LRD per USD when the order was placed. */
+  lrdPerUsd: number;
+  lines: OrderLine[];
+  itemCount: number;
 };
 
 export type CategoryData ={ id: string; slug: string; name: string; description: string | null };

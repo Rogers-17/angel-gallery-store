@@ -20,6 +20,7 @@
   "dependencies": {
     "@fontsource-variable/fraunces": "^5.3.0",
     "@neondatabase/serverless": "^1.2.0",
+    "@upstash/ratelimit": "^2.2.0",
     "@upstash/redis": "^1.39.0",
     "drizzle-orm": "^0.45.4",
     "geist": "^1.7.2",
