@@ -192,12 +192,12 @@ Goal: a real catalog in Neon replaces `src/app/_data/catalog.ts`.
   - product cards: "Choose Options" → product page; single-variant products add from the card
 - [x] Cart expiry (sliding 30 days) and cleanup: a batch of expired carts is swept after each new cart (`after()`), plus `pnpm carts:cleanup`. (96e7084)
 
-## Phase 4: Checkout & WhatsApp order hand-off (core flow)
+## Phase 4: Checkout & WhatsApp order hand-off (core flow) ✅
 
 Built in two parts:
 
 - **Part 1** (`prompts/phase-4-part-1-checkout.md`, 8ebc976): order tables, `/checkout`, `placeOrder`, the WhatsApp builder, the confirmation page, abuse protection, the inventory policy.
-- **Part 2:** order lookup and tests.
+- **Part 2** (`prompts/phase-4-part-2-lookup-tests.md`): order lookup and tests.
 
 - [x] **Order tables:**
   - `orders`:
@@ -232,13 +232,17 @@ Built in two parts:
   - the next steps: chat with the admin, agree the delivery fee, pay by your chosen method
   - USSD payment steps for the chosen method, from settings
   - the current order status
-- [ ] **Order lookup** (`/orders/lookup`, Part 2): order number + phone, for buyers who lose the link. It gets its own rate limit.
+- [x] **Order lookup** (`/orders/lookup`, Part 2): order number + phone, for buyers who lose the link.
+  - rate-limited per IP and per order number, failing closed
+  - footer "Track Order" links to it
 - [x] **Abuse protection** on guest checkout: rate limits per IP and phone (`@upstash/ratelimit` on the existing Upstash database), a honeypot field (add Cloudflare Turnstile if spam appears), quantity limits.
 - [x] **Inventory policy:**
   - placement re-checks stock and refuses changed bags, but does not decrement stock
   - stock is committed when the admin confirms the order and released if it's cancelled (built in Phase 6)
   - availability is shown honestly
-- [ ] **Tests** (Part 2): unit tests for money/LRD conversion, phone normalisation and the WhatsApp message builder; an end-to-end test of guest checkout.
+- [x] **Tests** (Part 2):
+  - unit tests (Vitest) for money/LRD conversion, phone normalisation, the WhatsApp message builder, the checkout and lookup schemas and order tokens
+  - an end-to-end test (Playwright) of guest checkout → WhatsApp link → lookup
 
 ## Phase 5: Authentication (Neon Auth, managed Better Auth)
 
@@ -338,7 +342,11 @@ Neon Postgres is the source of truth for app data. All database access goes thro
   - order lines are snapshots (name, variant, sku, price, image), so catalog edits never change past orders
   - guests open an order with `/orders/<number>?token=…`. The token is `HMAC(ORDER_TOKEN_SECRET, idempotency key)`, and only its SHA-256 is stored (`src/lib/orders/token.ts`).
   - never log buyer details or tokens
-- Rate limits (`src/lib/rate-limit.ts`, `@upstash/ratelimit`) fail open, and they are skipped when Upstash isn't configured.
+- Rate limits (`src/lib/rate-limit.ts`, `@upstash/ratelimit`):
+  - checkout fails open, so an order is never lost
+  - order lookup fails closed, so phones can't be guessed during an outage
+  - both are skipped when Upstash isn't configured
+- Order lookup rebuilds the buyer's link from the stored idempotency key, and only when the number **and** phone match.
 - Money is integer USD cents (`src/lib/money.ts` formats USD and ≈ LRD). Phone numbers go through `src/lib/phone.ts` (E.164 `+231…`).
 - CLI scripts (`scripts/*`) use their own client (`scripts/db.ts`): `src/db/index.ts` is `server-only` and can't load outside Next.
 - Get the client with `getDb()` from `@/db`. It is created lazily so builds do not need `DATABASE_URL`.
@@ -363,9 +371,10 @@ Neon Postgres is the source of truth for app data. All database access goes thro
 
 ```
 src/app/               Routes (App Router): / (home), /shop, /shop/[category], /collections/[slug],
-                       /search, /products/[slug], /cart, /checkout, /orders/[number], /design-system;
-                       sitemap.ts, robots.ts, opengraph-image.tsx, not-found.tsx
-src/app/actions/       Server Actions ("use server"): cart add / buy now / update / remove; checkout placeOrder
+                       /search, /products/[slug], /cart, /checkout, /orders/[number], /orders/lookup,
+                       /design-system; sitemap.ts, robots.ts, opengraph-image.tsx, not-found.tsx
+src/app/actions/       Server Actions ("use server"): cart add / buy now / update / remove; checkout
+                       placeOrder; orders findOrder (lookup)
 src/content/home.ts    Editorial homepage content (hero, tiles, mosaic, banner, section titles)
 src/app/api/health/    GET — database connectivity check
 src/app/fonts.ts       Font definitions (all self-hosted)
@@ -380,7 +389,7 @@ src/components/seo/    Escaped JSON-LD helper + BreadcrumbList builder
 src/components/cart/   Cart UI provider (drawer state), header bag + drawer, line items, summary,
                        Add to Cart / Buy Now buttons
 src/components/checkout/ Checkout form (useActionState), choice cards, order summary
-src/components/orders/ WhatsApp button, order status pill
+src/components/orders/ WhatsApp button, order status pill, lookup form
 src/db/index.ts        Drizzle client (server-only, lazy, neon-http)
 src/db/transaction.ts  withTransaction(): per-call WebSocket Pool for interactive transactions
 src/db/schema.ts       Drizzle table definitions
@@ -388,8 +397,10 @@ src/db/queries/        Server-only reads: catalog + settings (`use cache`), list
                        (`use cache: remote`), cart + orders (request-time), mappers, tags, DTO types
 src/db/mutations/      Server-only writes (cart, orders)
 src/lib/cart/          Cart cookie signing (server-only) and shared limits
-src/lib/orders/        Checkout schema (Zod), order token helpers (server-only), labels,
+src/lib/orders/        Checkout + lookup schemas (Zod), order token helpers (server-only), labels,
                        WhatsApp message builder
+src/**/*.test.ts       Vitest unit tests, colocated (config: vitest.config.mts; test/ holds stubs)
+e2e/                   Playwright end-to-end tests + teardown (config: playwright.config.ts)
 src/lib/rate-limit.ts  Upstash rate limits (fail open) + client IP
 src/lib/env.ts         Server-only env access (throws on missing vars)
 src/lib/listing.ts     Search-param schema (Zod), in-memory filter/sort/paginate, facet + link helpers
@@ -448,7 +459,12 @@ Do not overcomplicate manual test commands unless the implementation truly needs
 
 - `pnpm typecheck` — TypeScript, no emit (`tsc --noEmit`)
 - `pnpm lint` — ESLint (`eslint`)
+- `pnpm test` — Vitest unit tests (`src/**/*.test.ts`); pure logic only, no database or network
 - `pnpm build` — Next.js production build, only when the change could affect the build
+- `pnpm test:e2e` — Playwright end-to-end tests (`e2e/`), when the cart, checkout or orders change:
+  - it builds and starts the app on port 3200 with Upstash switched off, and runs in the locally installed Chrome
+  - it writes real orders to the `.env` database (**dev branch only**) and deletes them afterwards ("E2E Test Buyer")
+  - `--headed` shows the browser; `pnpm exec playwright show-report` opens the report
 
 Database:
 
@@ -467,7 +483,7 @@ Development and runtime:
 - `pnpm dev` — start the Next.js dev server (restart after editing `.env.local`)
 - `pnpm start` — run the production build locally after `pnpm build`
 
-After implementation, run `typecheck` and `lint` at minimum. Add `build` when routes, config, or server modules changed. Report the exact command output; do not claim a check passed without running it.
+After implementation, run `typecheck`, `lint` and `test` at minimum. Add `build` when routes, config, or server modules changed. Report the exact command output; do not claim a check passed without running it.
 
 # Git commits
 

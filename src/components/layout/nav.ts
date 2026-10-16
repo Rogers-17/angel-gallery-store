@@ -36,7 +36,7 @@ export const footerNav: { title: string; links: NavLink[] }[] = [
     title: "Help",
     links: [
       { label: "How To Order", href: "#" },
-      { label: "Track Order", href: "#" },
+      { label: "Track Order", href: "/orders/lookup" },
       { label: "Returns & Exchanges", href: "#" },
       { label: "About Us", href: "#" },
       { label: "FAQ", href: "#" },

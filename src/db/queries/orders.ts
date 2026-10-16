@@ -1,5 +1,5 @@
 import "server-only";
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { cache } from "react";
 import { getDb } from "@/db";
 import { orderItems, orders } from "@/db/schema";
@@ -7,6 +7,20 @@ import { verifyOrderToken } from "@/lib/orders/token";
 import type { OrderView } from "./types";
 
 const ORDER_NUMBER = /^AG-\d{4,9}$/;
+
+/**
+ * For order lookup: the order's idempotency key (from which its link token is derived) when the
+ * number exists and was placed with this phone (E.164); otherwise null. Server-only: the key must
+ * never reach the client or logs.
+ */
+export async function findOrderLinkKey(number: string, whatsappPhone: string): Promise<string | null> {
+  if (!ORDER_NUMBER.test(number)) return null;
+  const [row] = await getDb()
+    .select({ idempotencyKey: orders.idempotencyKey })
+    .from(orders)
+    .where(and(eq(orders.number, number), eq(orders.whatsappPhone, whatsappPhone)));
+  return row?.idempotencyKey ?? null;
+}
 
 /**
  * The order behind a guest link, or null when the number is unknown or the token doesn't match

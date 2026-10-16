@@ -7,16 +7,23 @@ import { after } from "next/server";
 import { serverEnv } from "@/lib/env";
 
 // Rate limits on the existing Upstash database. Keys hold a SHA-256 of the identifier, never a raw
-// IP or phone. They fail open: a slow or failing Redis must never lose an order. Without Upstash
+// IP, phone or order number. Checkout fails open (a slow or failing Redis must never lose an
+// order); lookup passes `failClosed` (an outage must not allow guessing phones). Without Upstash
 // (e.g. local dev) limits are skipped.
 
 const limits = {
   /** Generous: Liberian mobile carriers put many buyers behind one IP (CGNAT). */
   "checkout:ip": Ratelimit.slidingWindow(10, "10 m"),
   "checkout:phone": Ratelimit.slidingWindow(5, "1 h"),
+  "lookup:ip": Ratelimit.slidingWindow(10, "15 m"),
+  /** Per order number, so phones can't be guessed for one order even from many IPs. */
+  "lookup:order": Ratelimit.slidingWindow(5, "1 h"),
 } as const;
 
 export type RateLimitName = keyof typeof limits;
+
+/** "limited": over the limit; "unavailable": Redis failed and the check fails closed. */
+export type RateLimitResult = "allowed" | "limited" | "unavailable";
 
 const limiters = new Map<RateLimitName, Ratelimit>();
 let warnedMissing = false;
@@ -44,20 +51,32 @@ function getLimiter(name: RateLimitName): Ratelimit | null {
   return limiter;
 }
 
-/** True when the request may proceed. */
-export async function checkRateLimit(name: RateLimitName, identifier: string): Promise<boolean> {
+export async function rateLimit(
+  name: RateLimitName,
+  identifier: string,
+  { failClosed = false }: { failClosed?: boolean } = {},
+): Promise<RateLimitResult> {
   const limiter = getLimiter(name);
-  if (!limiter) return true;
+  if (!limiter) return "allowed";
+  const unavailable: RateLimitResult = failClosed ? "unavailable" : "allowed";
   try {
     const key = createHash("sha256").update(identifier).digest("hex");
     const { success, reason, pending } = await limiter.limit(key);
     after(() => pending);
-    if (reason === "timeout") console.warn(`[rate-limit] ${name} timed out; allowing the request.`);
-    return success;
+    if (reason === "timeout") {
+      console.warn(`[rate-limit] ${name} timed out; ${failClosed ? "refusing" : "allowing"} the request.`);
+      return unavailable;
+    }
+    return success ? "allowed" : "limited";
   } catch (error) {
-    console.error(`[rate-limit] ${name} failed; allowing the request:`, error);
-    return true;
+    console.error(`[rate-limit] ${name} failed; ${failClosed ? "refusing" : "allowing"} the request:`, error);
+    return unavailable;
   }
+}
+
+/** True when the request may proceed (fails open). */
+export async function checkRateLimit(name: RateLimitName, identifier: string): Promise<boolean> {
+  return (await rateLimit(name, identifier)) === "allowed";
 }
 
 /** The client IP as reported by the platform proxy (Vercel sets x-forwarded-for). */

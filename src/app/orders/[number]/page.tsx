@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { type ReactNode, Suspense } from "react";
 import { OrderSummary } from "@/components/checkout/order-summary";
@@ -150,6 +151,10 @@ async function OrderContents({ params, searchParams }: OrderPageProps) {
 
       <p className="mt-8 text-center text-caption text-muted">
         Bookmark this page to check your order later. Anyone with this link can see your order, so keep it private.
+        <br />
+        Lost the link? Use{" "}
+        <Link href="/orders/lookup" className="link-inline text-ink">Track order</Link>
+        {" "}with your order number and WhatsApp number.
       </p>
     </>
   );
