@@ -196,7 +196,7 @@ Goal: a real catalog in Neon replaces `src/app/_data/catalog.ts`.
 
 Built in two parts:
 
-- **Part 1** (`prompts/phase-4-part-1-checkout.md`): order tables, `/checkout`, `placeOrder`, the WhatsApp builder, the confirmation page, abuse protection, the inventory policy.
+- **Part 1** (`prompts/phase-4-part-1-checkout.md`, 8ebc976): order tables, `/checkout`, `placeOrder`, the WhatsApp builder, the confirmation page, abuse protection, the inventory policy.
 - **Part 2:** order lookup and tests.
 
 - [x] **Order tables:**
